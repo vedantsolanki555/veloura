@@ -1,0 +1,645 @@
+/* ============================================================
+   VELOURA — Design System
+   Ek jagah colours, fonts, spacing. Har component isi se banta hai.
+   ============================================================ */
+
+/* ---------- 1. Design tokens (CSS variables) ---------- */
+:root {
+    /* Colours */
+    --bg:        #faf8f5;   /* warm off-white page background */
+    --surface:   #ffffff;   /* cards, navbar */
+    --text:      #1a1a1a;   /* main text */
+    --text-soft: #6b6560;   /* secondary text */
+    --primary:   #1a1a1a;   /* dark — buttons, headings */
+    --accent:    #a67c52;   /* warm gold — highlights, links hover */
+    --border:    #e8e2da;   /* hairline borders */
+    --sale:      #9b2c2c;   /* discount price red */
+
+    /* Typography */
+    --font-heading: "Playfair Display", Georgia, serif;
+    --font-body:    "Inter", -apple-system, "Segoe UI", sans-serif;
+
+    /* Layout */
+    --container: 1200px;
+    --radius:    10px;
+    --shadow:    0 4px 24px rgba(26, 26, 26, 0.06);
+
+    /* Motion */
+    --ease: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ---------- 2. Reset + base ---------- */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+    -webkit-font-smoothing: antialiased;
+}
+
+img { max-width: 100%; display: block; }
+a   { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+
+h1, h2, h3, h4 {
+    font-family: var(--font-heading);
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--primary);
+}
+
+.container {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 24px;
+}
+
+/* ---------- 3. Buttons ---------- */
+.btn {
+    display: inline-block;
+    padding: 14px 32px;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    border: 1px solid var(--primary);
+    border-radius: 0;                 /* sharp edges = fashion look */
+    transition: all 0.3s var(--ease);
+}
+
+.btn-primary {
+    background: var(--primary);
+    color: #fff;
+}
+.btn-primary:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--primary);
+}
+.btn-outline:hover {
+    background: var(--primary);
+    color: #fff;
+}
+
+/* ---------- 4. Navbar ---------- */
+.navbar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: rgba(250, 248, 245, 0.92);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+}
+
+.navbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+    gap: 24px;
+}
+
+.logo {
+    font-family: var(--font-heading);
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+
+.nav-links {
+    display: flex;
+    gap: 32px;
+}
+
+.nav-links a {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    position: relative;
+    transition: color 0.25s var(--ease);
+}
+.nav-links a::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: -4px;
+    width: 0; height: 1px;
+    background: var(--accent);
+    transition: width 0.3s var(--ease);
+}
+.nav-links a:hover { color: var(--text); }
+.nav-links a:hover::after { width: 100%; }
+
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Search box */
+.nav-search {
+    display: flex;
+    align-items: center;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    padding: 6px 12px;
+    transition: border-color 0.25s var(--ease);
+}
+.nav-search:focus-within { border-color: var(--accent); }
+.nav-search input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 13px;
+    width: 140px;
+    color: var(--text);
+}
+.nav-search input::placeholder { color: var(--text-soft); }
+.nav-search button {
+    border: none;
+    background: none;
+    color: var(--text-soft);
+    display: flex;
+    padding: 2px;
+}
+.nav-search button:hover { color: var(--accent); }
+
+.nav-icon {
+    color: var(--text);
+    display: flex;
+    transition: color 0.25s var(--ease);
+}
+.nav-icon:hover { color: var(--accent); }
+
+.nav-login {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text);
+    border-bottom: 1px solid var(--primary);
+    padding-bottom: 2px;
+    transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.nav-login:hover { color: var(--accent); border-color: var(--accent); }
+
+/* Burger (mobile only) */
+.nav-burger {
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 4px;
+}
+.nav-burger span {
+    width: 22px; height: 2px;
+    background: var(--text);
+    transition: transform 0.3s var(--ease), opacity 0.3s var(--ease);
+}
+.nav-burger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-burger.open span:nth-child(2) { opacity: 0; }
+.nav-burger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ---------- 5. Hero (home page) ---------- */
+.hero {
+    text-align: center;
+    padding: 120px 24px 100px;
+    background:
+        radial-gradient(ellipse at top, #fff 0%, transparent 65%),
+        var(--bg);
+}
+
+.hero-eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+}
+
+.hero h1 {
+    font-size: clamp(2.6rem, 6vw, 4.5rem);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    margin-bottom: 20px;
+}
+
+.hero p {
+    max-width: 520px;
+    margin: 0 auto 40px;
+    color: var(--text-soft);
+    font-weight: 300;
+    font-size: 1.05rem;
+}
+
+/* ---------- 6. Section headers ---------- */
+.section {
+    padding: 80px 0;
+}
+.section-alt { background: var(--surface); }
+
+.section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 48px;
+    gap: 16px;
+}
+
+.section-head h2 {
+    font-size: clamp(1.8rem, 3vw, 2.4rem);
+}
+
+.section-link {
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    white-space: nowrap;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.25s var(--ease);
+}
+.section-link:hover { border-color: var(--accent); }
+
+/* ---------- 7. Category tiles (home) ---------- */
+.category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.category-tile {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 4;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--primary);
+}
+.category-tile img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.75;
+    transition: transform 0.6s var(--ease), opacity 0.4s var(--ease);
+}
+.category-tile:hover img {
+    transform: scale(1.05);
+    opacity: 0.6;
+}
+.category-tile .tile-label {
+    position: absolute;
+    inset: auto 0 0 0;
+    padding: 28px;
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 1.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+/* ---------- 8. Product grid + card ---------- */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+}
+
+.product-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+}
+.product-card:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow);
+}
+
+.product-card .card-img {
+    position: relative;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: #f0ebe4;
+}
+.product-card .card-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s var(--ease);
+}
+.product-card:hover .card-img img { transform: scale(1.04); }
+
+/* Badges: New / Sale */
+.badge {
+    position: absolute;
+    top: 12px; left: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 5px 10px;
+    border-radius: 3px;
+    background: var(--primary);
+    color: #fff;
+}
+.badge-sale { background: var(--sale); }
+
+.card-body {
+    padding: 18px 18px 22px;
+}
+.card-category {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    margin-bottom: 6px;
+}
+.card-title {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+.card-price {
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+.card-price .old {
+    color: var(--text-soft);
+    text-decoration: line-through;
+    font-weight: 300;
+    margin-right: 8px;
+}
+.card-price .sale { color: var(--sale); }
+
+/* ---------- 9. Shop page toolbar ---------- */
+.shop-header {
+    text-align: center;
+    padding: 72px 24px 40px;
+}
+.shop-header h1 {
+    font-size: clamp(2.2rem, 4vw, 3rem);
+    margin-bottom: 12px;
+}
+.shop-header p { color: var(--text-soft); }
+
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    padding-bottom: 48px;
+}
+.filter-chip {
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 9px 22px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-soft);
+    transition: all 0.25s var(--ease);
+}
+.filter-chip:hover { border-color: var(--primary); color: var(--text); }
+.filter-chip.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+/* Empty state (search with no results) */
+.empty-state {
+    text-align: center;
+    padding: 80px 24px 120px;
+    color: var(--text-soft);
+}
+.empty-state h2 { margin-bottom: 12px; }
+
+/* ---------- 9b. Shop toolbar: price filter + sort ---------- */
+.shop-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding-bottom: 8px;
+}
+
+.price-filter,
+.sort-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.price-filter label,
+.sort-box label {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+}
+
+.price-filter input,
+.sort-select {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 14px;
+    padding: 9px 12px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.25s var(--ease);
+}
+.price-filter input { width: 110px; }
+.price-filter input:focus,
+.sort-select:focus { border-color: var(--accent); }
+
+.price-dash { color: var(--text-soft); }
+
+.btn-apply {
+    padding: 9px 18px;
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: var(--primary);
+    color: #fff;
+    border: 1px solid var(--primary);
+    border-radius: 6px;
+    transition: background 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+.btn-apply:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+/* ---------- 9c. Why Veloura cards ---------- */
+.why-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+}
+
+.why-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 28px;
+    text-align: center;
+    transition: transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.why-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow);
+}
+
+.why-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--accent);
+    margin-bottom: 18px;
+}
+
+.why-card h3 {
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+}
+.why-card p {
+    font-size: 0.92rem;
+    font-weight: 300;
+    color: var(--text-soft);
+}
+
+/* ---------- 10. "Coming soon" placeholder page ---------- */
+.coming-soon {
+    min-height: 50vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px;
+}
+.coming-soon h1 { font-size: 2.4rem; margin-bottom: 12px; }
+.coming-soon p  { color: var(--text-soft); margin-bottom: 32px; }
+
+/* ---------- 11. Footer ---------- */
+.footer {
+    margin-top: 100px;
+    background: var(--primary);
+    color: #d9d4cd;
+}
+
+.footer-inner {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 48px;
+    padding: 72px 24px 48px;
+}
+
+.footer .logo { color: #fff; margin-bottom: 12px; display: inline-block; }
+.footer-tagline { font-weight: 300; max-width: 280px; }
+
+.footer-col h4 {
+    color: #fff;
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+}
+.footer-col a {
+    display: block;
+    font-size: 14px;
+    font-weight: 300;
+    margin-bottom: 12px;
+    color: #d9d4cd;
+    transition: color 0.25s var(--ease);
+}
+.footer-col a:hover { color: var(--accent); }
+
+.footer-bottom {
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 20px 24px;
+    text-align: center;
+    font-size: 13px;
+    font-weight: 300;
+}
+
+/* ---------- 12. Responsive ---------- */
+
+/* Tablet */
+@media (max-width: 992px) {
+    .product-grid { grid-template-columns: repeat(3, 1fr); }
+    .category-grid { grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .nav-search input { width: 100px; }
+}
+
+/* Small tablet / large phone */
+@media (max-width: 768px) {
+    .nav-links {
+        display: none;
+        position: absolute;
+        top: 72px; left: 0; right: 0;
+        flex-direction: column;
+        gap: 0;
+        background: var(--surface);
+        border-bottom: 1px solid var(--border);
+        box-shadow: var(--shadow);
+    }
+    .nav-links.open { display: flex; }
+    .nav-links a {
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--border);
+    }
+    .nav-links a:last-child { border-bottom: none; }
+    .nav-links a::after { display: none; }
+
+    .nav-burger { display: flex; }
+    .nav-login { display: none; }
+
+    .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    .category-grid { grid-template-columns: 1fr; }
+    .why-grid { grid-template-columns: 1fr; }
+    .shop-toolbar { flex-direction: column; align-items: stretch; }
+    .price-filter, .sort-box { justify-content: center; flex-wrap: wrap; }
+    .section { padding: 56px 0; }
+    .hero { padding: 80px 24px 64px; }
+    .footer-inner { grid-template-columns: 1fr; gap: 32px; }
+}
+
+/* Phone */
+@media (max-width: 480px) {
+    .navbar-inner { height: 60px; gap: 10px; }
+    .logo { font-size: 20px; letter-spacing: 0.18em; }
+    .nav-search { display: none; }          /* search hidden; use Shop page search */
+    .nav-links { top: 60px; }
+    .product-grid { gap: 12px; }
+    .card-body { padding: 12px 12px 16px; }
+    .card-title { font-size: 0.95rem; }
+    .btn { padding: 12px 24px; }
+}

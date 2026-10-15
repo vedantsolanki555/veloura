@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} — Veloura{% endblock %}
+
+{# Product detail — placeholder page. Full detail (images, size, add-to-cart) comes in Phase 3. #}
+
+{% block content %}
+<section class="coming-soon">
+    <h1>{{ product.name }}</h1>
+    <p>Product detail page Phase 3 mein aayega.</p>
+    <p class="card-price">₹{{ product.price }}</p>
+    <br>
+    <a href="{{ url_for('main.shop') }}" class="btn btn-outline">Back to Shop</a>
+</section>
+{% endblock %}

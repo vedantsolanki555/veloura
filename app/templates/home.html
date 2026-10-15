@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Veloura — Premium Clothing{% endblock %}
+{% block meta_description %}Veloura — premium ethnic and contemporary clothing for men, women and kids.{% endblock %}
+
+{% block content %}
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+    <p class="hero-eyebrow">New Season · 2026</p>
+    <h1>Elegance, Woven In.</h1>
+    <p>Premium fabrics. Thoughtful cuts. Clothing made to be worn for years, not seasons.</p>
+    <a href="{{ url_for('main.shop') }}" class="btn btn-primary">Shop Collection</a>
+</section>
+
+<!-- ============ FEATURED ============ -->
+{% if featured %}
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-head">
+            <h2>Featured</h2>
+            <a href="{{ url_for('main.shop') }}" class="section-link">View all →</a>
+        </div>
+        <div class="product-grid">
+            {% for product in featured %}
+                {% include "_product_card.html" %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============ CATEGORY TILES ============ -->
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <h2>Shop by Category</h2>
+        </div>
+        <div class="category-grid">
+            {% for cat in categories %}
+            <a href="{{ url_for('main.shop_category', slug=cat.slug) }}" class="category-tile">
+                <!-- Placeholder image; real lookbook photos later -->
+                <img src="https://placehold.co/600x800/1a1a1a/a67c52?text={{ cat.name }}"
+                     alt="{{ cat.name }}" loading="lazy">
+                <span class="tile-label">{{ cat.name }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ============ NEW ARRIVALS ============ -->
+{% if new_arrivals %}
+<section class="section section-alt">
+    <div class="container">
+        <div class="section-head">
+            <h2>New Arrivals</h2>
+            <a href="{{ url_for('main.shop') }}" class="section-link">View all →</a>
+        </div>
+        <div class="product-grid">
+            {% for product in new_arrivals %}
+                {% include "_product_card.html" %}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============ WHY VELOURA (trust badges) ============ -->
+<section class="section">
+    <div class="container">
+        <div class="section-head">
+            <h2>Why Veloura</h2>
+        </div>
+        <div class="why-grid">
+            <div class="why-card">
+                <span class="why-icon" aria-hidden="true">
+                    <!-- truck icon -->
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="1" y="6" width="14" height="10" rx="1"/>
+                        <path d="M15 9h4l3 3v4h-7"/><circle cx="6" cy="18" r="1.6"/><circle cx="18" cy="18" r="1.6"/>
+                    </svg>
+                </span>
+                <h3>Free Delivery</h3>
+                <p>Free shipping on all prepaid orders across India.</p>
+            </div>
+            <div class="why-card">
+                <span class="why-icon" aria-hidden="true">
+                    <!-- return arrow icon -->
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12a9 9 0 1 0 3-6.7"/><polyline points="3 4 3 9 8 9"/>
+                    </svg>
+                </span>
+                <h3>Easy Return</h3>
+                <p>7-day hassle-free returns if it isn’t perfect for you.</p>
+            </div>
+            <div class="why-card">
+                <span class="why-icon" aria-hidden="true">
+                    <!-- cash icon -->
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="6" width="20" height="12" rx="2"/>
+                        <circle cx="12" cy="12" r="2.5"/>
+                    </svg>
+                </span>
+                <h3>Cash on Delivery</h3>
+                <p>Pay when your order arrives at your doorstep.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}

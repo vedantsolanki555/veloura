@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }} — Veloura{% endblock %}
+
+{% block content %}
+
+<!-- ============ SHOP HEADER ============ -->
+<section class="shop-header">
+    <h1>{{ page_title }}</h1>
+    {% if search_query %}
+        <p>{{ products|length }} result{{ 's' if products|length != 1 }} for “{{ search_query }}”</p>
+    {% else %}
+        <p>{{ products|length }} product{{ 's' if products|length != 1 }}</p>
+    {% endif %}
+</section>
+
+<!-- ============ FILTER CHIPS (category links) ============ -->
+<div class="container">
+    <div class="filter-bar">
+        <a href="{{ url_for('main.shop', q=search_query or none, min=min_price or none, max=max_price or none, sort=sort if sort != 'newest' else none) }}"
+           class="filter-chip {{ 'active' if not active_category }}">All</a>
+        {% for cat in all_categories %}
+            <a href="{{ url_for('main.shop_category', slug=cat.slug, q=search_query or none, min=min_price or none, max=max_price or none, sort=sort if sort != 'newest' else none) }}"
+               class="filter-chip {{ 'active' if active_category == cat.slug }}">{{ cat.name }}</a>
+        {% endfor %}
+    </div>
+
+    <!-- ============ PRICE FILTER + SORT ============ -->
+    <!--
+      GET form: page URL depends on category (action), other filters stay in inputs.
+      min/max submitted with Apply button; sort auto-submits via JS (main.js).
+    -->
+    <form class="shop-toolbar"
+          method="get"
+          action="{{ url_for('main.shop_category', slug=active_category) if active_category else url_for('main.shop') }}">
+        {% if search_query %}
+            <input type="hidden" name="q" value="{{ search_query }}">
+        {% endif %}
+
+        <div class="price-filter">
+            <label for="min">Price</label>
+            <input type="number" id="min" name="min" min="0" step="1"
+                   placeholder="Min ₹" value="{{ min_price }}" aria-label="Minimum price">
+            <span class="price-dash">—</span>
+            <input type="number" id="max" name="max" min="0" step="1"
+                   placeholder="Max ₹" value="{{ max_price }}" aria-label="Maximum price">
+            <button type="submit" class="btn-apply">Apply</button>
+        </div>
+
+        <div class="sort-box">
+            <label for="sort-select">Sort</label>
+            <select id="sort-select" name="sort" class="sort-select">
+                <option value="newest" {{ 'selected' if sort == 'newest' }}>Newest</option>
+                <option value="price_asc" {{ 'selected' if sort == 'price_asc' }}>Price: Low to High</option>
+                <option value="price_desc" {{ 'selected' if sort == 'price_desc' }}>Price: High to Low</option>
+            </select>
+        </div>
+    </form>
+</div>
+
+<!-- ============ PRODUCT GRID ============ -->
+<section class="section" style="padding-top: 40px;">
+    <div class="container">
+        {% if products %}
+            <div class="product-grid">
+                {% for product in products %}
+                    {% include "_product_card.html" %}
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <h2>No products found</h2>
+                <p>Try a different search, or browse all products.</p>
+                <br>
+                <a href="{{ url_for('main.shop') }}" class="btn btn-outline">View all products</a>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+{% endblock %}
