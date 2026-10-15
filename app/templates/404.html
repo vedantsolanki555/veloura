@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{# Custom 404 page — shown when a page or product is not found. #}
+
+{% block title %}Page not found — Veloura{% endblock %}
+
+{% block content %}
+<section class="coming-soon">
+    <h1>404 — Page Not Found</h1>
+    <p>Yeh page exist nahi karta. Product hata ya link galat ho sakta hai.</p>
+    <a href="{{ url_for('main.shop') }}" class="btn btn-outline">Back to Shop</a>
+</section>
+{% endblock %}

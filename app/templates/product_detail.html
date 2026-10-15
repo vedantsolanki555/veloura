@@ -1,15 +1,137 @@
 {% extends "base.html" %}
 
+{# Product detail page — Phase 3. Add-to-cart logic comes in Phase 4. #}
+
 {% block title %}{{ product.name }} — Veloura{% endblock %}
 
-{# Product detail — placeholder page. Full detail (images, size, add-to-cart) comes in Phase 3. #}
-
 {% block content %}
-<section class="coming-soon">
-    <h1>{{ product.name }}</h1>
-    <p>Product detail page Phase 3 mein aayega.</p>
-    <p class="card-price">₹{{ product.price }}</p>
-    <br>
-    <a href="{{ url_for('main.shop') }}" class="btn btn-outline">Back to Shop</a>
-</section>
+
+<div class="container">
+
+    <!-- ============ BREADCRUMB ============ -->
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="{{ url_for('main.home') }}">Home</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ url_for('main.shop') }}">Shop</a>
+        <span class="bc-sep">›</span>
+        <a href="{{ url_for('main.shop_category', slug=product.category.slug) }}">{{ product.category.name }}</a>
+        <span class="bc-sep">›</span>
+        <span class="bc-current">{{ product.name }}</span>
+    </nav>
+
+    <!-- ============ MAIN PRODUCT BLOCK ============ -->
+    <section class="pd-layout">
+
+        <!-- Left: big photo -->
+        <div class="pd-gallery">
+            {% set img = product.images[0] if product.images else None %}
+            <img id="pd-main-img"
+                 src="{{ img.image_url if img else 'https://placehold.co/800x1000?text=Veloura' }}"
+                 alt="{{ product.name }}">
+            {% if total_stock == 0 %}
+                <span class="badge badge-sale pd-oos-badge">Out of Stock</span>
+            {% endif %}
+        </div>
+
+        <!-- Right: details -->
+        <div class="pd-info">
+            <p class="pd-category">{{ product.category.name }}</p>
+            <h1 class="pd-title">{{ product.name }}</h1>
+
+            <p class="pd-price card-price">
+                {% if product.discount_price %}
+                    <span class="old">₹{{ product.price }}</span>
+                    <span class="sale">₹{{ product.discount_price }}</span>
+                {% else %}
+                    <span>₹{{ product.price }}</span>
+                {% endif %}
+            </p>
+
+            <!-- Stock status -->
+            {% if total_stock > 0 %}
+                <p class="pd-stock in-stock">In stock ({{ total_stock }} available)</p>
+            {% else %}
+                <p class="pd-stock out-of-stock">Out of Stock</p>
+            {% endif %}
+
+            <p class="pd-desc">{{ product.description }}</p>
+
+            <!-- Size selector: buttons built from product variants -->
+            {% if sizes %}
+            <div class="pd-field">
+                <p class="pd-label">Size</p>
+                <div class="size-options" id="size-options" role="group" aria-label="Select size">
+                    {% for size in sizes %}
+                        <button type="button"
+                                class="size-btn {{ 'disabled' if total_stock == 0 }}"
+                                data-size="{{ size }}"
+                                {{ 'disabled' if total_stock == 0 }}
+                                aria-pressed="false">{{ size }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Quantity -->
+            <div class="pd-field">
+                <p class="pd-label">Quantity</p>
+                <div class="qty-box">
+                    <button type="button" class="qty-btn" id="qty-minus" aria-label="Decrease quantity">−</button>
+                    <input type="number" id="qty-input" class="qty-input" value="1" min="1"
+                           max="{{ total_stock if total_stock > 0 else 1 }}" aria-label="Quantity">
+                    <button type="button" class="qty-btn" id="qty-plus" aria-label="Increase quantity">+</button>
+                </div>
+            </div>
+
+            <!-- Add to Cart: button only works visually; real cart in Phase 4 -->
+            <button type="button"
+                    class="btn btn-primary pd-cart-btn"
+                    id="add-to-cart-btn"
+                    {{ 'disabled' if total_stock == 0 }}>
+                {{ 'Out of Stock' if total_stock == 0 else 'Add to Cart' }}
+            </button>
+            <p class="pd-cart-msg" id="cart-msg" hidden>Cart Phase 4 mein aayega</p>
+
+            <!-- Fabric & care -->
+            {% if product.fabric_care %}
+            <div class="pd-fabric">
+                <p class="pd-label">Fabric &amp; Care</p>
+                <p>{{ product.fabric_care }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- ============ INFO BOX ============ -->
+    <section class="pd-info-box">
+        <div class="info-item">
+            <strong>Free Delivery</strong>
+            <span>On all prepaid orders</span>
+        </div>
+        <div class="info-item">
+            <strong>Easy Return</strong>
+            <span>7-day hassle-free returns</span>
+        </div>
+        <div class="info-item">
+            <strong>Cash on Delivery</strong>
+            <span>Pay at your doorstep</span>
+        </div>
+    </section>
+
+    <!-- ============ YOU MAY ALSO LIKE ============ -->
+    {% if related %}
+    <section class="section related-section">
+        <div class="section-head">
+            <h2>You may also like</h2>
+        </div>
+        <div class="product-grid">
+            {% for product in related %}
+                {% include "_product_card.html" %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+
 {% endblock %}

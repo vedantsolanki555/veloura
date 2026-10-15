@@ -82,9 +82,46 @@ def shop_category(slug):
 
 @main_bp.route("/product/<int:product_id>")
 def product_detail(product_id):
-    """Product detail — placeholder only; real page is built in Phase 3."""
-    product = Product.query.get_or_404(product_id)
-    return render_template("product_detail.html", product=product)
+    """Product detail page: photos, sizes, quantity, related products."""
+    from sqlalchemy.orm import joinedload
+
+    product = (
+        Product.query.options(
+            joinedload(Product.category),
+            joinedload(Product.images),
+            joinedload(Product.variants),
+        )
+        .filter_by(id=product_id)
+        .first_or_404()
+    )
+
+    # Total stock across all size/colour variants.
+    total_stock = sum(v.stock for v in product.variants)
+
+    # Unique sizes for the size selector (e.g. S, M, L, XL or Free).
+    sizes = sorted({v.size for v in product.variants})
+
+    # "You may also like": 4 other products from the same category.
+    related = (
+        Product.query.options(
+            joinedload(Product.category), joinedload(Product.images)
+        )
+        .filter(
+            Product.category_id == product.category_id,
+            Product.id != product.id,
+        )
+        .order_by(Product.created_at.desc())
+        .limit(4)
+        .all()
+    )
+
+    return render_template(
+        "product_detail.html",
+        product=product,
+        total_stock=total_stock,
+        sizes=sizes,
+        related=related,
+    )
 
 
 # ---------- internals ----------

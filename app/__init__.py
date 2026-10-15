@@ -36,6 +36,13 @@ def create_app():
     from app.routes.main import main_bp
     app.register_blueprint(main_bp)
 
+    # Custom 404 page (clean message instead of Flask's default error page).
+    from flask import render_template
+
+    @app.errorhandler(404)
+    def not_found(_error):
+        return render_template("404.html"), 404
+
     # Create database tables on first run so the app works even before seed.py.
     # (seed.py also calls create_all — harmless to do it twice.)
     with app.app_context():

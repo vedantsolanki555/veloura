@@ -178,3 +178,21 @@ class OrderItem(db.Model):
 
     def __repr__(self):
         return f"<OrderItem order={self.order_id} product={self.product_id} x{self.quantity}>"
+
+
+class Cart(db.Model):
+    """Shopping cart row — table ready, logic comes in Phase 4. (No data yet.)"""
+
+    __tablename__ = "cart"
+
+    id = db.Column(db.Integer, primary_key=True)
+    quantity = db.Column(db.Integer, default=1, nullable=False)
+
+    # Future links (user_id is NULL for guest cart until login exists).
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+    product_id = db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
+    variant_id = db.Column(db.Integer, db.ForeignKey("product_variants.id"), nullable=True)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f"<Cart {self.id} product={self.product_id} x{self.quantity}>"
