@@ -247,6 +247,68 @@ h1, h2, h3, h4 {
     font-size: 1.05rem;
 }
 
+/* ---------- 5b. Models split (Men + Women editorial cards) ---------- */
+.models-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 0 24px 40px;
+}
+
+.model-card {
+    position: relative;
+    display: block;
+    aspect-ratio: 3 / 4;
+    max-height: 720px;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--primary);
+}
+.model-card img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transition: transform 0.7s var(--ease);
+}
+.model-card:hover img { transform: scale(1.04); }
+
+.model-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 40px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 55%);
+    color: #fff;
+}
+.model-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    opacity: 0.85;
+    margin-bottom: 8px;
+}
+.model-overlay h2 {
+    color: #fff;
+    font-size: clamp(1.8rem, 3vw, 2.6rem);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+.model-cta {
+    font-size: 13px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.6);
+    align-self: flex-start;
+    padding-bottom: 3px;
+    transition: border-color 0.25s var(--ease);
+}
+.model-card:hover .model-cta { border-color: #fff; }
+
 /* ---------- 6. Section headers ---------- */
 .section {
     padding: 80px 0;
@@ -819,6 +881,8 @@ h1, h2, h3, h4 {
     .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .category-grid { grid-template-columns: 1fr; }
     .why-grid { grid-template-columns: 1fr; }
+    .models-split { grid-template-columns: 1fr; }
+    .model-card { aspect-ratio: 4 / 5; }
     .shop-toolbar { flex-direction: column; align-items: stretch; }
     .price-filter, .sort-box { justify-content: center; flex-wrap: wrap; }
     .pd-layout { grid-template-columns: 1fr; gap: 32px; }

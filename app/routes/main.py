@@ -52,11 +52,16 @@ def home():
 
     categories = Category.query.order_by(Category.name).all()
 
+    # Real model / category photos for the home page (from app/images.py).
+    from app.images import CATEGORY_IMAGES, MODEL_IMAGES
+
     return render_template(
         "home.html",
         featured=featured,
         new_arrivals=new_arrivals,
         categories=categories,
+        category_images=CATEGORY_IMAGES,
+        model_images=MODEL_IMAGES,
     )
 
 

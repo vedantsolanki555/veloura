@@ -12,6 +12,7 @@ Safe to re-run: if an admin user already exists, it exits without touching data.
 """
 
 from app import create_app, db
+from app.images import PRODUCT_IMAGES
 from app.models import (
     Category,
     Product,
@@ -20,13 +21,8 @@ from app.models import (
     User,
 )
 
-# Placeholder images. Real product photos replace these in a later step.
+# Fallback image if a product has no photo in app/images.py.
 PLACEHOLDER = "https://placehold.co/600x800?text=Veloura"
-
-
-def img(name):
-    """Build a placeholder image URL that says the product name."""
-    return f"https://placehold.co/600x800?text={name.replace(' ', '+')}"
 
 
 # (name, slug, description, price, discount_price, fabric_care, is_featured, is_new)
@@ -106,8 +102,10 @@ def seed():
         db.create_all()
 
         # Idempotency guard: if admin already exists, assume data is seeded.
+        # BUT still upgrade old placeholder images to real photos if needed.
         if User.query.filter_by(email="admin@veloura.local").first():
-            print("Database already seeded — nothing to do.")
+            print("Database already seeded — checking images…")
+            update_images()
             return
 
         # 1) Admin user.
@@ -160,9 +158,10 @@ def seed():
             )
             db.session.add(product)
 
-            # Two placeholder images per product (front/back placeholders).
-            product.images.append(ProductImage(image_url=img(name), position=0))
-            product.images.append(ProductImage(image_url=PLACEHOLDER, position=1))
+            # Two real photos per product (from app/images.py).
+            urls = PRODUCT_IMAGES.get(slug, [PLACEHOLDER, PLACEHOLDER])
+            product.images.append(ProductImage(image_url=urls[0], position=0))
+            product.images.append(ProductImage(image_url=urls[1], position=1))
 
             # Size/colour variants. Accessories use "Free" size.
             if cat.slug == "accessories":
@@ -192,6 +191,29 @@ def seed():
         print(f"  Products:   {Product.query.count()}")
         print(f"  Images:     {ProductImage.query.count()}")
         print(f"  Variants:   {ProductVariant.query.count()}")
+
+
+def update_images():
+    """Replace any old placehold.co URLs with real photos from app/images.py.
+
+    Safe to run any time: products that already have real images are skipped.
+    """
+    updated = 0
+    for product in Product.query.all():
+        urls = PRODUCT_IMAGES.get(product.slug)
+        if not urls:
+            continue
+        real_images = [i for i in product.images if "placehold.co" not in i.image_url]
+        if real_images:
+            continue  # already has real photos
+        # Remove old placeholders, add real ones.
+        for old in list(product.images):
+            db.session.delete(old)
+        product.images.append(ProductImage(image_url=urls[0], position=0))
+        product.images.append(ProductImage(image_url=urls[1], position=1))
+        updated += 1
+    db.session.commit()
+    print(f"  Images updated on {updated} product(s).")
 
 
 if __name__ == "__main__":

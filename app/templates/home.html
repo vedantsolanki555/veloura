@@ -13,6 +13,26 @@
     <a href="{{ url_for('main.shop') }}" class="btn btn-primary">Shop Collection</a>
 </section>
 
+<!-- ============ MODELS: MEN + WOMEN ============ -->
+<section class="models-split">
+    <a href="{{ url_for('main.shop_category', slug='men') }}" class="model-card">
+        <img src="{{ model_images.men }}" alt="Men’s collection model" loading="lazy">
+        <div class="model-overlay">
+            <p class="model-eyebrow">The Gentleman</p>
+            <h2>Men</h2>
+            <span class="model-cta">Shop Men →</span>
+        </div>
+    </a>
+    <a href="{{ url_for('main.shop_category', slug='women') }}" class="model-card">
+        <img src="{{ model_images.women }}" alt="Women’s collection model" loading="lazy">
+        <div class="model-overlay">
+            <p class="model-eyebrow">The Muse</p>
+            <h2>Women</h2>
+            <span class="model-cta">Shop Women →</span>
+        </div>
+    </a>
+</section>
+
 <!-- ============ FEATURED ============ -->
 {% if featured %}
 <section class="section section-alt">
@@ -39,9 +59,9 @@
         <div class="category-grid">
             {% for cat in categories %}
             <a href="{{ url_for('main.shop_category', slug=cat.slug) }}" class="category-tile">
-                <!-- Placeholder image; real lookbook photos later -->
-                <img src="https://placehold.co/600x800/1a1a1a/a67c52?text={{ cat.name }}"
-                     alt="{{ cat.name }}" loading="lazy">
+                <!-- Real model photo from app/images.py -->
+                <img src="{{ category_images.get(cat.slug, 'https://placehold.co/600x800?text=Veloura') }}"
+                     alt="{{ cat.name }} collection" loading="lazy">
                 <span class="tile-label">{{ cat.name }}</span>
             </a>
             {% endfor %}
