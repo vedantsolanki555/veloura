@@ -1,10 +1,24 @@
 {% extends "base.html" %}
 
-{# Product detail page — Phase 3. Add-to-cart logic comes in Phase 4. #}
+{#-
+  Product detail page — gallery, colour + size variant picker, WhatsApp order.
+  Variant data (size, colour, stock) is embedded as JSON and read by main.js.
+-#}
 
 {% block title %}{{ product.name }} — Veloura{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
 
 {% block content %}
+
+{# Colour name → swatch colour. Unknown names fall back to a text chip. #}
+{% set COLOUR_HEX = {
+    "Indigo": "#3f4793",
+    "Black":  "#171717",
+    "Brown":   "#8a5a34",
+    "Ivory":   "#f4efe3",
+    "Blue":    "#2f6fbe",
+    "Rose":    "#e38fa1"
+} %}
 
 <div class="container">
 
@@ -20,16 +34,40 @@
     </nav>
 
     <!-- ============ MAIN PRODUCT BLOCK ============ -->
-    <section class="pd-layout">
+    <section class="pd-layout"
+             id="pd-layout"
+             data-variants="{{ variants_json | tojson | forceescape }}"
+             data-product-name="{{ product.name }}"
+             data-product-price="{{ (product.discount_price or product.price) | inr }}"
+             data-whatsapp="{{ whatsapp_number }}"
+             data-url="{{ request.url }}">
 
-        <!-- Left: big photo -->
+        <!-- Left: gallery (big photo + clickable thumbnails) -->
         <div class="pd-gallery">
-            {% set img = product.images[0] if product.images else None %}
-            <img id="pd-main-img"
-                 src="{{ img.image_url if img else 'https://placehold.co/800x1000?text=Veloura' }}"
-                 alt="{{ product.name }}">
-            {% if total_stock == 0 %}
-                <span class="badge badge-sale pd-oos-badge">Out of Stock</span>
+            <div class="pd-main-wrap" id="pd-main-wrap">
+                {% set img = product.images[0] if product.images else None %}
+                <img id="pd-main-img"
+                     src="{{ img.image_url if img else 'https://placehold.co/800x1000?text=Veloura' }}"
+                     alt="{{ img.alt if img and img.alt else product.name }}">
+                {% if total_stock == 0 %}
+                    <span class="badge badge-sale pd-oos-badge">Out of Stock</span>
+                {% endif %}
+            </div>
+
+            {% if product.images | length > 1 %}
+            <div class="pd-thumbs" id="pd-thumbs" role="group" aria-label="More photos">
+                {% for img in product.images %}
+                <button type="button"
+                        class="pd-thumb {{ 'active' if loop.first }}"
+                        data-full="{{ img.image_url }}"
+                        data-alt="{{ img.alt if img.alt else product.name }}"
+                        aria-label="Show photo {{ loop.index }} of {{ product.images | length }}">
+                    <img src="{{ img.image_url }}"
+                         alt="{{ img.alt if img.alt else product.name }}"
+                         loading="lazy">
+                </button>
+                {% endfor %}
+            </div>
             {% endif %}
         </div>
 
@@ -40,33 +78,56 @@
 
             <p class="pd-price card-price">
                 {% if product.discount_price %}
-                    <span class="old">₹{{ product.price }}</span>
-                    <span class="sale">₹{{ product.discount_price }}</span>
+                    <span class="old">{{ product.price | inr }}</span>
+                    <span class="sale">{{ product.discount_price | inr }}</span>
                 {% else %}
-                    <span>₹{{ product.price }}</span>
+                    <span>{{ product.price | inr }}</span>
                 {% endif %}
             </p>
 
-            <!-- Stock status -->
+            <!-- Stock status for the selected variant (updated by main.js) -->
             {% if total_stock > 0 %}
-                <p class="pd-stock in-stock">In stock ({{ total_stock }} available)</p>
+                <p class="pd-stock in-stock" id="pd-stock" aria-live="polite">Select size and colour to check stock</p>
             {% else %}
-                <p class="pd-stock out-of-stock">Out of Stock</p>
+                <p class="pd-stock out-of-stock" id="pd-stock" aria-live="polite">Out of stock</p>
             {% endif %}
 
             <p class="pd-desc">{{ product.description }}</p>
 
-            <!-- Size selector: buttons built from product variants -->
+            <!-- Size selector -->
             {% if sizes %}
             <div class="pd-field">
-                <p class="pd-label">Size</p>
-                <div class="size-options" id="size-options" role="group" aria-label="Select size">
+                <p class="pd-label" id="size-label">Size</p>
+                <div class="size-options" id="size-options" role="group" aria-labelledby="size-label">
                     {% for size in sizes %}
                         <button type="button"
-                                class="size-btn {{ 'disabled' if total_stock == 0 }}"
+                                class="size-btn"
                                 data-size="{{ size }}"
-                                {{ 'disabled' if total_stock == 0 }}
+                                {{ 'disabled' if size not in sizes_in_stock }}
                                 aria-pressed="false">{{ size }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Colour selector -->
+            {% if colours %}
+            <div class="pd-field">
+                <p class="pd-label" id="colour-label">Colour</p>
+                <div class="colour-options" id="colour-options" role="group" aria-labelledby="colour-label">
+                    {% for colour in colours %}
+                        {% set hex = COLOUR_HEX.get(colour) %}
+                        <button type="button"
+                                class="colour-btn {{ '' if hex else 'no-swatch' }}"
+                                data-colour="{{ colour }}"
+                                {{ 'disabled' if colour not in colours_in_stock }}
+                                title="{{ colour }}"
+                                aria-pressed="false">
+                            {% if hex %}
+                                <span class="swatch" style="background: {{ hex }}"></span>
+                            {% endif %}
+                            <span class="colour-name">{{ colour }}</span>
+                        </button>
                     {% endfor %}
                 </div>
             </div>
@@ -83,14 +144,27 @@
                 </div>
             </div>
 
-            <!-- Add to Cart: button only works visually; real cart in Phase 4 -->
-            <button type="button"
-                    class="btn btn-primary pd-cart-btn"
-                    id="add-to-cart-btn"
-                    {{ 'disabled' if total_stock == 0 }}>
-                {{ 'Out of Stock' if total_stock == 0 else 'Add to Cart' }}
-            </button>
-            <p class="pd-cart-msg" id="cart-msg" hidden>Cart Phase 4 mein aayega</p>
+            <!-- Add to Cart (real cart lands in Step 4) + WhatsApp order.
+                 main.js enables them once size and colour are chosen. -->
+            <div class="pd-actions">
+                <button type="button"
+                        class="btn btn-primary pd-cart-btn"
+                        id="add-to-cart-btn"
+                        disabled>
+                    Add to Cart
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline pd-wa-btn"
+                        id="whatsapp-btn"
+                        {{ 'disabled' if not whatsapp_number or total_stock == 0 }}>
+                    Order on WhatsApp
+                </button>
+            </div>
+            <p class="pd-cart-msg" id="cart-msg" hidden>Cart is coming soon</p>
+            {% if not whatsapp_number %}
+                <p class="pd-cart-msg">WhatsApp ordering is being configured.</p>
+            {% endif %}
 
             <!-- Fabric & care -->
             {% if product.fabric_care %}

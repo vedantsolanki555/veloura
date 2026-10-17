@@ -103,6 +103,8 @@ class ProductImage(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     image_url = db.Column(db.String(500), nullable=False)
+    # Alt text read by screen readers (and shown if the image fails to load).
+    alt = db.Column(db.String(300), default="", nullable=False)
     # Position controls display order (0 = first image).
     position = db.Column(db.Integer, default=0, nullable=False)
 

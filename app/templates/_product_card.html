@@ -6,7 +6,7 @@
     <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="card-img">
         {% set img = product.images[0] if product.images else None %}
         <img src="{{ img.image_url if img else 'https://placehold.co/600x800?text=Veloura' }}"
-             alt="{{ product.name }}" loading="lazy">
+             alt="{{ img.alt if img and img.alt else product.name }}" loading="lazy">
 
         {% if product.discount_price %}
             <span class="badge badge-sale">Sale</span>
@@ -21,10 +21,10 @@
         </h3>
         <p class="card-price">
             {% if product.discount_price %}
-                <span class="old">₹{{ product.price }}</span>
-                <span class="sale">₹{{ product.discount_price }}</span>
+                <span class="old">{{ product.price | inr }}</span>
+                <span class="sale">{{ product.discount_price | inr }}</span>
             {% else %}
-                <span>₹{{ product.price }}</span>
+                <span>{{ product.price | inr }}</span>
             {% endif %}
         </p>
     </div>

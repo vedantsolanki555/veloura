@@ -24,6 +24,12 @@ from app.models import (
 # Fallback image if a product has no photo in app/images.py.
 PLACEHOLDER = "https://placehold.co/600x800?text=Veloura"
 
+# ---- Stock test fixtures (Step 3, item 11) ---------------------------------
+# One single variant with stock 0 (other sizes of the same product stay in stock).
+ZERO_STOCK_VARIANTS = [("mens-cotton-chinos", "M")]
+# One whole product with every variant out of stock.
+OUT_OF_STOCK_PRODUCTS = ["kids-graphic-tee"]
+
 
 # (name, slug, description, price, discount_price, fabric_care, is_featured, is_new)
 # price/discount_price: discount_price None = not on sale.
@@ -101,11 +107,15 @@ def seed():
         # Create tables if missing (e.g. brand new database).
         db.create_all()
 
+        # Older databases were created before ProductImage.alt existed.
+        ensure_alt_column()
+
         # Idempotency guard: if admin already exists, assume data is seeded.
-        # BUT still upgrade old placeholder images to real photos if needed.
+        # BUT still sync local photos + stock test fixtures (safe to re-run).
         if User.query.filter_by(email="admin@veloura.local").first():
-            print("Database already seeded — checking images…")
-            update_images()
+            print("Database already seeded — syncing images + stock fixtures…")
+            sync_images()
+            apply_stock_fixtures()
             return
 
         # 1) Admin user.
@@ -158,10 +168,16 @@ def seed():
             )
             db.session.add(product)
 
-            # Two real photos per product (from app/images.py).
-            urls = PRODUCT_IMAGES.get(slug, [PLACEHOLDER, PLACEHOLDER])
-            product.images.append(ProductImage(image_url=urls[0], position=0))
-            product.images.append(ProductImage(image_url=urls[1], position=1))
+            # Local photos + alt text (from app/images.py) — gallery order.
+            entries = PRODUCT_IMAGES.get(slug) or [{"src": PLACEHOLDER, "alt": name}]
+            for position, entry in enumerate(entries):
+                product.images.append(
+                    ProductImage(
+                        image_url=entry["src"],
+                        alt=entry["alt"],
+                        position=position,
+                    )
+                )
 
             # Size/colour variants. Accessories use "Free" size.
             if cat.slug == "accessories":
@@ -184,6 +200,9 @@ def seed():
         # One transaction: all rows commit together or not at all.
         db.session.commit()
 
+        # Step 3 test data (one empty variant, one sold-out product).
+        apply_stock_fixtures()
+
         # Print a short report.
         print("Seeded successfully!")
         print(f"  Users:      {User.query.count()}")
@@ -193,27 +212,75 @@ def seed():
         print(f"  Variants:   {ProductVariant.query.count()}")
 
 
-def update_images():
-    """Replace any old placehold.co URLs with real photos from app/images.py.
+def ensure_alt_column():
+    """Add product_images.alt to databases created before the column existed.
 
-    Safe to run any time: products that already have real images are skipped.
+    db.create_all() only creates *missing tables*, never missing columns, so an
+    old SQLite file needs this one-time ALTER. Safe to run repeatedly.
     """
-    updated = 0
+    inspector = db.inspect(db.engine)
+    columns = [c["name"] for c in inspector.get_columns("product_images")]
+    if "alt" not in columns:
+        db.session.execute(
+            db.text("ALTER TABLE product_images ADD COLUMN alt VARCHAR(300) DEFAULT ''")
+        )
+        db.session.commit()
+        print("  Added missing column: product_images.alt")
+
+
+def sync_images():
+    """Make product_images match app/images.py (local files + alt text).
+
+    Rebuilds the image rows of a product whenever they differ from the
+    catalogue. Sample data only — regenerable with seed.py.
+    """
+    rebuilt = 0
     for product in Product.query.all():
-        urls = PRODUCT_IMAGES.get(product.slug)
-        if not urls:
+        entries = PRODUCT_IMAGES.get(product.slug)
+        if not entries:
             continue
-        real_images = [i for i in product.images if "placehold.co" not in i.image_url]
-        if real_images:
-            continue  # already has real photos
-        # Remove old placeholders, add real ones.
+        wanted = [(e["src"], e["alt"]) for e in entries]
+        current = [
+            (img.image_url, img.alt or "")
+            for img in sorted(product.images, key=lambda i: i.position)
+        ]
+        if current == wanted:
+            continue  # already in sync
         for old in list(product.images):
             db.session.delete(old)
-        product.images.append(ProductImage(image_url=urls[0], position=0))
-        product.images.append(ProductImage(image_url=urls[1], position=1))
-        updated += 1
+        for position, (src, alt) in enumerate(wanted):
+            product.images.append(
+                ProductImage(image_url=src, alt=alt, position=position)
+            )
+        rebuilt += 1
     db.session.commit()
-    print(f"  Images updated on {updated} product(s).")
+    print(f"  Images synced on {rebuilt} product(s).")
+
+
+def apply_stock_fixtures():
+    """Step 3 test data: one empty variant + one fully sold-out product."""
+    changed = 0
+
+    for slug, size in ZERO_STOCK_VARIANTS:
+        product = Product.query.filter_by(slug=slug).first()
+        if not product:
+            continue
+        for variant in product.variants:
+            if variant.size == size and variant.stock != 0:
+                variant.stock = 0
+                changed += 1
+
+    for slug in OUT_OF_STOCK_PRODUCTS:
+        product = Product.query.filter_by(slug=slug).first()
+        if not product:
+            continue
+        for variant in product.variants:
+            if variant.stock != 0:
+                variant.stock = 0
+                changed += 1
+
+    db.session.commit()
+    print(f"  Stock fixtures applied ({changed} variant(s) set to 0).")
 
 
 if __name__ == "__main__":

@@ -1,155 +1,134 @@
 # Veloura — Project Map
 
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
-Har naya phase aane par is file ko update karte raho.
+Har naya step aane par is file ko update karte raho.
+
+**Status updated:** Step 3 ke baad (items 1–14 ke hisaab se).
 
 ---
 
 ## A) PAGE LIST
 
-| Page | URL | Kaam | Phase | Status |
+| Page | URL | Kaam | Step | Status |
 | --- | --- | --- | --- | --- |
 | Home | `/` | Hero banner, featured, categories, new arrivals, Why Veloura | 2 | **Done** |
 | Shop | `/shop` | Product grid, category filter, price filter, sort, search | 2 | **Done** |
 | Category Shop | `/shop/<slug>` | Ek category ke products (men, women, kids, accessories) | 2 | **Done** |
-| Product Detail | `/product/<id>` | Bada photo, size, quantity, related products | 3 | **Done** |
-| Signup | `/signup` | Naya customer account banane ke liye | 4 | Baaki |
-| Login | `/login` | Customer login | 4 | Baaki |
-| Logout | `/logout` | Login band karna | 4 | Baaki |
-| Cart | `/cart` | Customer ka shopping cart | 4 | Baaki |
-| Checkout | `/checkout` | Address + order place karna | 5 | Baaki |
-| My Orders | `/orders` | Customer ke apne orders ki list | 5 | Baaki |
-| Admin Login | `/admin/login` | Sirf admin ke liye login | 6 | Baaki |
-| Admin Products | `/admin/products` | Products add/edit/delete | 6 | Baaki |
-| Admin Categories | `/admin/categories` | Categories add/edit/delete | 6 | Baaki |
-| Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 6 | Baaki |
+| Product Detail | `/product/<id>` | Gallery (thumbs + zoom), size + colour selector, per-variant stock, WhatsApp order, related products | 3 | **Done** (Add to Cart abhi "Cart is coming soon" dikhata hai — real cart Step 4 me) |
 | 404 | (koi bhi galat URL) | "Page not found" + Back to Shop button | 3 | **Done** |
+| Cart | `/cart` | Session cart, quantity update, shipping + total | 4 | Baaki |
+| Checkout | `/checkout` | Address form (COD only), CSRF + honeypot | 4 | Baaki |
+| Order Success | `/order/<id>` | COD order confirmation | 4 | Baaki |
+| Admin Login | `/admin/login` | Sirf admin ke liye login | 5 | Baaki |
+| Admin Products | `/admin/products` | Products add/edit/delete | 5 | Baaki |
+| Admin Categories | `/admin/categories` | Categories add/edit/delete | 5 | Baaki |
+| Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 5 | Baaki |
+| SEO + Deploy | — | sitemap, robots, meta, Render deploy | 6 | Baaki |
+
+**Customer login/signup nahi hai** — cart session-based hai (Step 4 spec ke hisaab se).
 
 ---
 
-## B) DATABASE TABLES
+## B) STEP 3 STATUS (items 1–14)
+
+| # | Item | Status |
+| --- | --- | --- |
+| 1 | Gallery — main image + clickable thumbnails + hover zoom + mobile scroll | **Done** |
+| 2 | Colour swatches (hex map + text-chip fallback) | **Done** |
+| 3 | Size + colour = one variant; stock, disabled combos, qty max = variant stock | **Done** |
+| 4 | "Order on WhatsApp" — `WHATSAPP_NUMBER` env se, wa.me prefilled message | **Done** |
+| 5 | Add to Cart button + "Cart is coming soon" (English) | **Done** |
+| 6 | Price format `₹2,499` — `inr` Jinja filter (`app/__init__.py`) | **Done** |
+| 7 | Sort by effective price (discount chaho to wahi) | **Done** |
+| 8 | Navbar search keeps category + price filters | **Done** |
+| 9 | Per-page meta descriptions (Home, Shop, Category, Product) | **Done** |
+| 10 | Navbar se "Login" link hata di | **Done** |
+| 11 | Seed test data: 1 variant stock 0 + 1 product out of stock | **Done** |
+| 12 | Yeh file (PROJECT_MAP) reality ke hisaab se | **Done** |
+| 13 | Local product photos (Pexels) + `CREDITS.md`, sab 300 KB se kam | **Done** |
+| 14 | Test loop — app chala kar sab check kiya, errors fix kiye | **Done** |
+
+---
+
+## C) DATABASE TABLES
 
 Database file (local dev): `instance/veloura.db`
 
-### 1. users — customer aur admin dono ke accounts
+### 1. users — admin account (login Step 5 me)
 
 | Column | Type | Kaam |
 | --- | --- | --- |
 | id | Integer (PK) | Unique number |
 | email | String(120), unique | Login email |
 | password_hash | String(256) | Password ka hash (plain text kabhi nahi) |
-| is_admin | Boolean | `True` = admin, `False` = normal customer |
+| is_admin | Boolean | `True` = admin |
 | created_at | DateTime | Account kab bana |
 
-Links: `cart.user_id -> users.id`, `orders` se bhi future me
 Abhi rows: **1** (sirf admin — `admin@veloura.local`)
 
-### 2. categories — product groups (Men, Women, Kids, Accessories)
+### 2. categories — product groups
 
 | Column | Type | Kaam |
 | --- | --- | --- |
 | id | Integer (PK) | Unique number |
 | name | String(80), unique | Jaise "Men" |
-| slug | String(80), unique | URL ke liye, jaise "men" (/shop/men) |
+| slug | String(80), unique | URL ke liye, jaise "men" |
 
-Links: `products.category_id -> categories.id`
 Abhi rows: **4**
 
-### 3. products — yahi asli "cloth" table hai (kapdon ki list)
+### 3. products — kapdon ki list
 
 | Column | Type | Kaam |
 | --- | --- | --- |
 | id | Integer (PK) | Unique number |
-| name | String(200) | Product ka naam |
-| slug | String(220), unique | URL-friendly naam (baad me use hoga) |
-| description | Text | Product ki details |
+| name / slug / description | — | Naam, URL naam, details |
 | price | Numeric(10,2) | Original price (₹) |
 | discount_price | Numeric(10,2), nullable | Sale price; NULL = no discount |
-| fabric_care | Text | Fabric aur dhulne ka tarika |
-| is_featured | Boolean | Home page "Featured" me dikhana hai? |
-| is_new | Boolean | Home page "New Arrivals" me dikhana hai? |
+| fabric_care | Text | Fabric aur care instructions |
+| is_featured / is_new | Boolean | Home page sections |
 | created_at | DateTime | Kab add hua |
-| category_id | Integer (FK) | Kis category ka hai |
+| category_id | Integer (FK) | Kis category ka product |
 
-Links: `products.category_id -> categories.id`
 Abhi rows: **18**
 
-### 4. product_images — product ki photos (URLs)
+### 4. product_images — photos + alt text
 
 | Column | Type | Kaam |
 | --- | --- | --- |
 | id | Integer (PK) | Unique number |
-| image_url | String(500) | Photo ka URL (abhi placeholder) |
-| position | Integer | Display order (0 = pehli photo) |
+| image_url | String(500) | Local file path, jaise `/static/img/products/mens-silk-kurta-1.jpg` |
+| alt | String(300) | Screen readers ke liye alt text |
+| position | Integer | Gallery order (0 = pehli photo) |
 | product_id | Integer (FK) | Kis product ki photo |
 
-Links: `product_images.product_id -> products.id`
-Abhi rows: **36** (har product ki 2 photos)
+Abhi rows: **52** (har product ki 2–3 photos, sab local, `app/static/img/products/` me)
 
 ### 5. product_variants — size / colour / stock
 
 | Column | Type | Kaam |
 | --- | --- | --- |
-| id | Integer (PK) | Unique number |
 | size | String(20) | S, M, L, XL, Free, 2-3Y etc. |
 | colour | String(50) | Indigo, Black etc. |
-| stock | Integer | Kitne piece available hain |
+| stock | Integer | Kitne piece available |
 | product_id | Integer (FK) | Kis product ka variant |
 
-Links: `product_variants.product_id -> products.id`
-Abhi rows: **62**
+Abhi rows: **62** — test ke liye: `mens-cotton-chinos` size **M** = 0 stock, poori `kids-graphic-tee` = **0 stock**
 
-### 6. cart — shopping cart (sirf table bani hai, logic Phase 4 me)
+### 6. cart — Step 4 ka session cart
 
-| Column | Type | Kaam |
-| --- | --- | --- |
-| id | Integer (PK) | Unique number |
-| quantity | Integer | Kitne piece cart me |
-| user_id | Integer (FK), nullable | Kis customer ka cart (NULL = guest) |
-| product_id | Integer (FK) | Kaunsa product |
-| variant_id | Integer (FK), nullable | Kaunsa size/colour |
-| created_at | DateTime | Kab add kiya |
+Abhi rows: **0** (Step 4 me bharegi)
 
-Links: `cart.user_id -> users.id`, `cart.product_id -> products.id`, `cart.variant_id -> product_variants.id`
-Abhi rows: **0** (khaali table, Phase 4 me bharegi)
+### 7. orders / 8. order_items — COD orders (Step 4)
 
-### 7. orders — customer ke orders
-
-| Column | Type | Kaam |
-| --- | --- | --- |
-| id | Integer (PK) | Unique number |
-| customer_name | String(120) | Naam |
-| phone | String(20) | Phone number |
-| address | Text | Pura address |
-| city | String(80) | Shehar |
-| pincode | String(10) | PIN code |
-| notes | Text | Special instruction |
-| status | String(20) | pending / confirmed / shipped / delivered / cancelled |
-| total | Numeric(10,2) | Order ka total (₹) |
-| created_at | DateTime | Order kab hua |
-
-Links: (abhi koi FK nahi; Phase 5 me user_id add hoga)
-Abhi rows: **0** (checkout baad me aayega)
-
-### 8. order_items — order ke andar ek ek line (product)
-
-| Column | Type | Kaam |
-| --- | --- | --- |
-| id | Integer (PK) | Unique number |
-| quantity | Integer | Kitne piece |
-| price | Numeric(10,2) | Order waqt ka price |
-| order_id | Integer (FK) | Kis order ka |
-| product_id | Integer (FK) | Kaunsa product |
-| variant_id | Integer (FK), nullable | Kaunsa size/colour |
-
-Links: `order_items.order_id -> orders.id`, `order_items.product_id -> products.id`
 Abhi rows: **0**
 
 ---
 
 ## Quick notes
 
-- **Admin login (abhi):** `admin@veloura.local` / `admin123` — production se pehle change karna zaroori hai.
 - **Local dev server:** `python wsgi.py` → http://127.0.0.1:5000/
+- **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
+  Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`
+- **Admin login (abhi):** `admin@veloura.local` / `admin123` — production se pehle change karna zaroori hai.
+- **WhatsApp:** `.env` me `WHATSAPP_NUMBER` (digits + country code, no `+`) — product page ka "Order on WhatsApp" button isi se banta hai.
 - **Seed data wapas chahiye?** `instance/veloura.db` delete karo, phir `python seed.py` chalao.
-- **Placeholder images:** placehold.co se aa rahe hain; real photos Cloudinary me Phase 6 me.

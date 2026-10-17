@@ -16,8 +16,8 @@
     --sale:      #9b2c2c;   /* discount price red */
 
     /* Typography */
-    --font-heading: "Playfair Display", Georgia, serif;
-    --font-body:    "Inter", -apple-system, "Segoe UI", sans-serif;
+    --font-heading: "Cormorant Garamond", Georgia, serif;
+    --font-body:    "Jost", -apple-system, "Segoe UI", sans-serif;
 
     /* Layout */
     --container: 1200px;
@@ -184,18 +184,6 @@ h1, h2, h3, h4 {
     transition: color 0.25s var(--ease);
 }
 .nav-icon:hover { color: var(--accent); }
-
-.nav-login {
-    font-size: 13px;
-    font-weight: 500;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-    color: var(--text);
-    border-bottom: 1px solid var(--primary);
-    padding-bottom: 2px;
-    transition: color 0.25s var(--ease), border-color 0.25s var(--ease);
-}
-.nav-login:hover { color: var(--accent); border-color: var(--accent); }
 
 /* Burger (mobile only) */
 .nav-burger {
@@ -686,9 +674,12 @@ h1, h2, h3, h4 {
 }
 .size-btn:hover:not(:disabled) { border-color: var(--primary); }
 .size-btn.selected {
-    background: var(--primary);
-    border-color: var(--primary);
-    color: #fff;
+    /* Selected size = thin champagne-gold border (Veloura design system). */
+    background: var(--surface);
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--text);
+    font-weight: 600;
 }
 .size-btn:disabled {
     opacity: 0.4;
@@ -730,23 +721,151 @@ h1, h2, h3, h4 {
 .qty-input::-webkit-outer-spin-button,
 .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-.pd-cart-btn {
-    width: 100%;
-    max-width: 320px;
-    margin-top: 8px;
-    border: none;
-}
-.pd-cart-btn:disabled {
-    background: var(--border);
-    border-color: var(--border);
-    color: var(--text-soft);
-    cursor: not-allowed;
-}
+.pd-cart-btn { border: none; }
 .pd-cart-msg {
     margin-top: 12px;
     font-size: 13px;
     font-weight: 500;
     color: var(--accent);
+}
+
+/* ---- Gallery: big photo + clickable thumbnails (Step 3) ---- */
+.pd-main-wrap {
+    position: relative;
+    overflow: hidden;             /* zoomed image never spills out */
+}
+.pd-main-wrap #pd-main-img {
+    transition: transform 0.3s var(--ease);
+    transform-origin: center center;
+}
+.pd-main-wrap.zoom #pd-main-img {
+    transition: transform 0.12s linear;   /* follow the cursor smoothly */
+    transform: scale(1.6);
+}
+
+.pd-thumbs {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+    overflow-x: auto;             /* phones: scroll the thumbnails sideways */
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+}
+.pd-thumb {
+    flex: 0 0 auto;
+    width: 78px;
+    height: 98px;
+    padding: 0;
+    border: 1px solid var(--border);
+    background: #f0ebe4;
+    overflow: hidden;
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.pd-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.pd-thumb:hover { border-color: var(--accent); }
+.pd-thumb.active {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);   /* thin gold border = selected */
+}
+
+/* ---- Colour swatches ---- */
+.colour-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.colour-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text-soft);
+    font-size: 13px;
+    transition: border-color 0.3s var(--ease), box-shadow 0.3s var(--ease);
+}
+.colour-btn .swatch {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    display: inline-block;
+}
+.colour-btn:hover:not(:disabled) { border-color: var(--accent); }
+.colour-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* Name is hidden until hover (tooltip) … */
+.colour-btn .colour-name { display: none; }
+.colour-btn:hover .colour-name {
+    display: inline-block;
+    position: absolute;
+    left: 50%;
+    top: calc(100% + 6px);
+    transform: translateX(-50%);
+    background: var(--primary);
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 4px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+    z-index: 6;
+}
+/* … and stays visible when the colour is selected … */
+.colour-btn.selected .colour-name,
+/* … or when there is no swatch colour (text-chip fallback). */
+.colour-btn.no-swatch .colour-name {
+    display: inline-block;
+    position: static;
+    transform: none;
+    background: transparent;
+    color: inherit;
+    font-size: 13px;
+    letter-spacing: normal;
+    text-transform: none;
+    padding: 0;
+    border-radius: 0;
+    white-space: normal;
+}
+.colour-btn.selected {
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px var(--accent);
+    color: var(--text);
+}
+
+/* ---- Product action buttons (Add to Cart + WhatsApp) ---- */
+.pd-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 8px;
+}
+.pd-actions .pd-cart-btn,
+.pd-actions .pd-wa-btn {
+    flex: 1 1 200px;
+    max-width: 320px;
+    margin-top: 0;
+}
+.pd-wa-btn { border-color: var(--accent); color: var(--primary); }
+.pd-wa-btn:hover:not(:disabled) {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+}
+.pd-cart-btn:disabled,
+.pd-wa-btn:disabled {
+    background: var(--border);
+    border-color: var(--border);
+    color: var(--text-soft);
+    cursor: not-allowed;
 }
 
 .pd-fabric {
@@ -876,7 +995,6 @@ h1, h2, h3, h4 {
     .nav-links a::after { display: none; }
 
     .nav-burger { display: flex; }
-    .nav-login { display: none; }
 
     .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
     .category-grid { grid-template-columns: 1fr; }
@@ -902,4 +1020,7 @@ h1, h2, h3, h4 {
     .card-body { padding: 12px 12px 16px; }
     .card-title { font-size: 0.95rem; }
     .btn { padding: 12px 24px; }
+    .pd-thumb { width: 64px; height: 80px; }
+    .pd-actions .pd-cart-btn,
+    .pd-actions .pd-wa-btn { flex: 1 1 100%; max-width: none; }
 }

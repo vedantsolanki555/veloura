@@ -13,7 +13,7 @@
     <!-- Google Fonts: serif for headings, sans-serif for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
@@ -38,8 +38,21 @@
             <!-- Right side: search + cart + login -->
             <div class="nav-actions">
 
-                <!-- Search: submits to /shop?q=... (filtering happens in the route) -->
-                <form class="nav-search" action="{{ url_for('main.shop') }}" method="get" role="search">
+                <!-- Search: keeps the category + price filters that are active now.
+                     On a category page the form posts back to that same category. -->
+                {% set search_action = url_for('main.shop_category', slug=request.view_args['slug'])
+                                       if request.endpoint == 'main.shop_category'
+                                       else url_for('main.shop') %}
+                <form class="nav-search" action="{{ search_action }}" method="get" role="search">
+                    {% if request.args.get('min') %}
+                        <input type="hidden" name="min" value="{{ request.args.get('min') }}">
+                    {% endif %}
+                    {% if request.args.get('max') %}
+                        <input type="hidden" name="max" value="{{ request.args.get('max') }}">
+                    {% endif %}
+                    {% if request.args.get('sort') and request.args.get('sort') != 'newest' %}
+                        <input type="hidden" name="sort" value="{{ request.args.get('sort') }}">
+                    {% endif %}
                     <input type="search" name="q" placeholder="Search products…"
                            value="{{ request.args.get('q', '') }}" aria-label="Search products">
                     <button type="submit" aria-label="Search">
@@ -51,7 +64,7 @@
                     </button>
                 </form>
 
-                <!-- Cart: Phase 3 me asli cart aayega. Abhi sirf icon placeholder. -->
+                <!-- Cart: real cart page arrives in Step 4. -->
                 <a href="#" class="nav-icon" aria-label="Cart">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -59,9 +72,6 @@
                         <circle cx="9" cy="20" r="1.4"/><circle cx="18" cy="20" r="1.4"/>
                     </svg>
                 </a>
-
-                <!-- Login: Phase 4 me auth aayega. Abhi placeholder. -->
-                <a href="#" class="nav-login">Login</a>
 
                 <!-- Burger button: visible only on mobile -->
                 <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">

@@ -21,6 +21,31 @@ from config import get_config
 db = SQLAlchemy()
 
 
+def inr(value):
+    """Indian money format for templates: {{ product.price | inr }} -> ₹2,499.
+
+    Uses Indian digit grouping (2,499 / 1,24,999) and never shows decimals.
+    """
+    try:
+        amount = int(round(float(value)))
+    except (TypeError, ValueError):
+        return value  # not a number — show it unchanged instead of crashing
+
+    digits = str(abs(amount))
+    if len(digits) > 3:
+        head, tail = digits[:-3], digits[-3:]
+        groups = []
+        while len(head) > 2:          # group the remaining digits in pairs
+            groups.insert(0, head[-2:])
+            head = head[:-2]
+        if head:
+            groups.insert(0, head)
+        digits = ",".join(groups + [tail])
+
+    sign = "-" if amount < 0 else ""
+    return f"{sign}₹{digits}"
+
+
 def create_app():
     """Create and configure the Veloura Flask application."""
 
@@ -31,6 +56,9 @@ def create_app():
 
     # Connect the database to this app.
     db.init_app(app)
+
+    # Money formatting filter, available in every template.
+    app.jinja_env.filters["inr"] = inr
 
     # Register routes. Each Blueprint is a group of related pages.
     from app.routes.main import main_bp

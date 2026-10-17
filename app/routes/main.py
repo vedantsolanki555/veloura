@@ -1,12 +1,14 @@
 """
 Main blueprint: public pages of the store.
 
-Phase 2 routes:
+Routes:
     /                     Home — hero, featured, categories, new arrivals, why section
     /shop                 All products; ?q= search, ?min/?max= price, ?sort=
     /shop/<slug>          One category (men, women, kids, accessories)
-    /product/<id>         Product detail placeholder (real page in Phase 3)
+    /product/<id>         Product detail — gallery, variants, WhatsApp order
 """
+
+import os
 
 from flask import Blueprint, render_template, request
 
@@ -71,6 +73,7 @@ def shop():
     context = _query_products(category_slug=None)
     context["all_categories"] = Category.query.order_by(Category.name).all()
     context["active_category"] = None
+    context["meta_description"] = _shop_meta(context)
     return render_template("shop.html", **context)
 
 
@@ -82,6 +85,8 @@ def shop_category(slug):
     context = _query_products(category_slug=slug)
     context["all_categories"] = Category.query.order_by(Category.name).all()
     context["active_category"] = slug
+    context["category_obj"] = category
+    context["meta_description"] = _shop_meta(context)
     return render_template("shop.html", **context)
 
 
@@ -106,6 +111,27 @@ def product_detail(product_id):
     # Unique sizes for the size selector (e.g. S, M, L, XL or Free).
     sizes = sorted({v.size for v in product.variants})
 
+    # Unique colours, in the order they appear (for the colour swatches).
+    colours = list(dict.fromkeys(v.colour for v in product.variants))
+
+    # Every variant as plain data — the page uses it to decide which
+    # size + colour combination is available and how much stock is left.
+    variants_json = [
+        {"id": v.id, "size": v.size, "colour": v.colour, "stock": v.stock}
+        for v in product.variants
+    ]
+
+    # Sizes / colours that have at least one option in stock — the
+    # template renders these as enabled buttons even before JS loads.
+    sizes_in_stock = {v.size for v in product.variants if v.stock > 0}
+    colours_in_stock = {v.colour for v in product.variants if v.stock > 0}
+
+    # Description for search engines: name + the start of the description.
+    short_desc = (product.description or "").strip().split(".")[0][:120]
+    meta_description = f"{product.name} — {short_desc}" if short_desc else (
+        f"{product.name} at Veloura. Free delivery and cash on delivery."
+    )
+
     # "You may also like": 4 other products from the same category.
     related = (
         Product.query.options(
@@ -125,6 +151,12 @@ def product_detail(product_id):
         product=product,
         total_stock=total_stock,
         sizes=sizes,
+        colours=colours,
+        sizes_in_stock=sizes_in_stock,
+        colours_in_stock=colours_in_stock,
+        variants_json=variants_json,
+        whatsapp_number=_whatsapp_number(),
+        meta_description=meta_description,
         related=related,
     )
 
@@ -164,6 +196,12 @@ def _query_products(category_slug, limit=60):
         )
         page_title = "Search"
 
+    # Effective price = discounted price when there is one, else full price.
+    # Used for BOTH the price filter and the sort, so the page always
+    # matches the price actually shown on the card.
+    from sqlalchemy import func
+    effective_price = func.coalesce(Product.discount_price, Product.price)
+
     # --- price filter (works together with category + search) ---
     # Blank input = no limit on that side.
     min_raw = request.args.get("min", "").strip()
@@ -171,16 +209,16 @@ def _query_products(category_slug, limit=60):
     min_price = _to_number(min_raw)
     max_price = _to_number(max_raw)
     if min_price is not None:
-        query = query.filter(Product.price >= min_price)
+        query = query.filter(effective_price >= min_price)
     if max_price is not None:
-        query = query.filter(Product.price <= max_price)
+        query = query.filter(effective_price <= max_price)
 
     # --- sort ---
     sort = request.args.get("sort", "newest")
     if sort == "price_asc":
-        query = query.order_by(Product.price.asc())
+        query = query.order_by(effective_price.asc())
     elif sort == "price_desc":
-        query = query.order_by(Product.price.desc())
+        query = query.order_by(effective_price.desc())
     else:
         # default = newest
         sort = "newest"
@@ -210,3 +248,33 @@ def db_or(*conditions):
     """Tiny helper: SQL OR for multiple ilike conditions."""
     from sqlalchemy import or_
     return or_(*conditions)
+
+
+def _whatsapp_number():
+    """WHATSAPP_NUMBER from the environment as digits only, e.g. 919876543210.
+
+    The wa.me link format is country-code + number with no +, spaces or dashes,
+    so anything that is not a digit is stripped.
+    """
+    raw = os.environ.get("WHATSAPP_NUMBER", "") or ""
+    return "".join(ch for ch in raw if ch.isdigit())
+
+
+def _shop_meta(context):
+    """Per-page meta description for the Shop and category pages."""
+    count = len(context["products"])
+    query = context.get("search_query") or ""
+    if query:
+        return (
+            f'{count} result{"s" if count != 1 else ""} for "{query}" at Veloura '
+            "— premium clothing with free delivery and cash on delivery."
+        )
+    if context.get("active_category"):
+        return (
+            f'Buy {context["page_title"]} online at Veloura — {count} premium '
+            "pieces, free delivery and cash on delivery."
+        )
+    return (
+        f"Shop {count} premium clothing pieces at Veloura — free delivery, "
+        "easy returns and cash on delivery."
+    )

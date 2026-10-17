@@ -1,101 +1,181 @@
-# Real photo URLs for Veloura (free Unsplash license, hotlink-friendly CDN).
-# Used by seed.py (product images) and the home page (model / category tiles).
+"""Local photo catalogue for Veloura.
 
-def _u(photo_id, w=900):
-    """Build a clean Unsplash CDN URL for a photo id."""
-    return f"https://images.unsplash.com/{photo_id}?auto=format&fit=crop&w={w}&q=80"
+Every photo lives in app/static/img/ and is served by Flask itself — the site
+never hotlinks external URLs.
+
+Sources + photographers are listed in app/static/img/products/CREDITS.md
+(free Pexels stock photos). Re-download with:  python tools/fetch_images.py
+
+Structure:
+    PRODUCT_IMAGES[slug] = [{"src": ..., "alt": ...}, ...]
+        Used by seed.py to fill the product_images table (gallery order).
+    CATEGORY_IMAGES[slug] = path      # "Shop by Category" tiles on Home
+    MODEL_IMAGES[slug] = path         # Men + Women hero split on Home
+"""
+
+# Local path of a product photo file.
+_P = "/static/img/products/"
+_H = "/static/img/home/"
 
 
-# Two photos per product slug: [main photo, second photo].
+# Photos per product, in gallery order, each with alt text for screen readers.
 PRODUCT_IMAGES = {
     # --- Men ---
     "mens-silk-kurta": [
-        _u("photo-1770359993283-a2c2f386584e"),
-        _u("photo-1774527929835-282b1b85cd3a"),
+        {"src": _P + "mens-silk-kurta-1.jpg",
+         "alt": "Model wearing a brown silk kurta with white trousers"},
+        {"src": _P + "mens-silk-kurta-2.jpg",
+         "alt": "Model in a white silk kurta standing indoors"},
     ],
     "mens-linen-shirt": [
-        _u("photo-1602810318383-e386cc2a3ccf"),
-        _u("photo-1624835567150-0c530a20d8cc"),
+        {"src": _P + "mens-linen-shirt-1.jpg",
+         "alt": "Bearded model wearing a white linen shirt and trousers"},
+        {"src": _P + "mens-linen-shirt-2.jpg",
+         "alt": "Man wearing a white linen shirt in an artistic portrait"},
+        {"src": _P + "mens-linen-shirt-3.jpg",
+         "alt": "Young man in a white shirt against a blue backdrop"},
     ],
     "mens-cotton-chinos": [
-        _u("photo-1626557981101-aae6f84aa6ff"),
-        _u("photo-1589234217365-08d3e0e5cf42"),
+        {"src": _P + "mens-cotton-chinos-1.jpg",
+         "alt": "Man in dark cotton chinos and a blazer sitting on a bench"},
+        {"src": _P + "mens-cotton-chinos-2.jpg",
+         "alt": "Top view of beige cotton chinos worn while walking"},
+        {"src": _P + "mens-cotton-chinos-3.jpg",
+         "alt": "Man in a dark shirt and slim cotton chinos, studio shot"},
     ],
     "mens-nehru-jacket": [
-        _u("photo-1772736243289-872f9ac73cf8"),
-        _u("photo-1774437790995-9a8513532a25"),
+        {"src": _P + "mens-nehru-jacket-1.jpg",
+         "alt": "Man buttoning a cream Nehru jacket with a red turban"},
+        {"src": _P + "mens-nehru-jacket-2.jpg",
+         "alt": "Man in a cream achkan-style Nehru jacket outdoors"},
+        {"src": _P + "mens-nehru-jacket-3.jpg",
+         "alt": "Man wearing a dark Nehru waistcoat, black and white portrait"},
     ],
     "mens-polo-tshirt": [
-        _u("photo-1521572163474-6864f9cf17ab"),
-        _u("photo-1607345366928-199ea26cfe3e"),
+        {"src": _P + "mens-polo-tshirt-1.jpg",
+         "alt": "Smiling man in a white polo shirt and beige trousers"},
+        {"src": _P + "mens-polo-tshirt-2.jpg",
+         "alt": "Man wearing a dark printed polo shirt"},
+        {"src": _P + "mens-polo-tshirt-3.jpg",
+         "alt": "Man in a light blue polo shirt"},
     ],
     # --- Women ---
     "womens-chiffon-saree": [
-        _u("photo-1619516388835-2b60acc4049e"),
-        _u("photo-1572470176170-98fa8abcb741"),
+        {"src": _P + "womens-chiffon-saree-1.jpg",
+         "alt": "Woman wearing a grey chiffon saree in a garden"},
+        {"src": _P + "womens-chiffon-saree-2.jpg",
+         "alt": "Woman in a teal chiffon saree with sunglasses"},
+        {"src": _P + "womens-chiffon-saree-3.jpg",
+         "alt": "Model in a deep red saree with silver sequin work"},
     ],
     "womens-anarkali-suit": [
-        _u("photo-1742800764280-d51117b7eb0a"),
-        _u("photo-1745313452052-0e4e341f326c"),
+        {"src": _P + "womens-anarkali-suit-1.jpg",
+         "alt": "Woman in a red anarkali suit with bridal jewellery"},
+        {"src": _P + "womens-anarkali-suit-2.jpg",
+         "alt": "Woman wearing a mauve anarkali suit with dupatta"},
+        {"src": _P + "womens-anarkali-suit-3.jpg",
+         "alt": "Model in a rust printed anarkali suit set"},
     ],
     "womens-cotton-kurti": [
-        _u("photo-1616583936499-d4116e7e2e76"),
-        _u("photo-1610048869310-d889ff25c374"),
+        {"src": _P + "womens-cotton-kurti-1.jpg",
+         "alt": "Woman in a pale green cotton kurti"},
+        {"src": _P + "womens-cotton-kurti-2.jpg",
+         "alt": "Woman wearing a white chikankari cotton kurti"},
+        {"src": _P + "womens-cotton-kurti-3.jpg",
+         "alt": "Model in a blue printed cotton kurti"},
     ],
     "womens-palazzo-pants": [
-        _u("photo-1571587289339-cb7da03fb5a6"),
-        _u("photo-1619715613791-89d35b51ff81"),
+        {"src": _P + "womens-palazzo-pants-1.jpg",
+         "alt": "Woman in striped wide-leg palazzo pants on the street"},
+        {"src": _P + "womens-palazzo-pants-2.jpg",
+         "alt": "Model in white palazzo pants sitting indoors"},
+        {"src": _P + "womens-palazzo-pants-3.jpg",
+         "alt": "Woman in cream wide-leg palazzo pants and a white shirt"},
     ],
     "womens-silk-blend-lehenga": [
-        _u("photo-1640745690917-41cacbf557c3"),
-        _u("photo-1756483510767-35245638c057"),
+        {"src": _P + "womens-silk-blend-lehenga-1.jpg",
+         "alt": "Woman twirling in a pink silk-blend lehenga"},
+        {"src": _P + "womens-silk-blend-lehenga-2.jpg",
+         "alt": "Model seated in a silver silk-blend lehenga"},
+        {"src": _P + "womens-silk-blend-lehenga-3.jpg",
+         "alt": "Bride in a silk-blend lehenga standing in an archway"},
     ],
     "womens-denim-jacket": [
-        _u("photo-1614940685083-c5409b57da6e"),
-        _u("photo-1630267693092-2ea1f7dcc9a5"),
+        {"src": _P + "womens-denim-jacket-1.jpg",
+         "alt": "Woman wearing a cropped denim jacket outdoors"},
+        {"src": _P + "womens-denim-jacket-2.jpg",
+         "alt": "Woman in a denim jacket standing in a garden"},
+        {"src": _P + "womens-denim-jacket-3.jpg",
+         "alt": "Smiling woman wearing a light-wash denim jacket"},
     ],
     # --- Kids ---
     "kids-cotton-frock": [
-        _u("photo-1578897367107-2828e351c8a8"),
-        _u("photo-1695262620869-fedab63bcc41"),
+        {"src": _P + "kids-cotton-frock-1.jpg",
+         "alt": "Little girl in a cotton frock walking in the park"},
+        {"src": _P + "kids-cotton-frock-2.jpg",
+         "alt": "Girl wearing a checked cotton frock"},
+        {"src": _P + "kids-cotton-frock-3.jpg",
+         "alt": "Girl in a mint green cotton frock with a pearl necklace"},
     ],
     "kids-graphic-tee": [
-        _u("photo-1617627057301-7b03d1097672"),
-        _u("photo-1635327343808-37edbaf09d70"),
+        {"src": _P + "kids-graphic-tee-1.jpg",
+         "alt": "Boy wearing a printed graphic t-shirt outdoors"},
+        {"src": _P + "kids-graphic-tee-2.jpg",
+         "alt": "Black and white portrait of a child in a graphic t-shirt"},
+        {"src": _P + "kids-graphic-tee-3.jpg",
+         "alt": "Boy in a green graphic t-shirt holding a football"},
     ],
     "kids-chinos-shorts": [
-        _u("photo-1758782213532-bbb5fd89885e"),
-        _u("photo-1631044237696-6b38064fbbf4"),
+        {"src": _P + "kids-chinos-shorts-1.jpg",
+         "alt": "Toddler walking in cotton chino shorts"},
+        {"src": _P + "kids-chinos-shorts-2.jpg",
+         "alt": "Boy in navy chino shorts with suspenders"},
+        {"src": _P + "kids-chinos-shorts-3.jpg",
+         "alt": "Boy in beige chino shorts and a navy t-shirt"},
     ],
     "kids-festive-kurta-set": [
-        _u("photo-1747069340536-4db7b52b8a73"),
-        _u("photo-1590480598135-3be152c87913"),
+        {"src": _P + "kids-festive-kurta-set-1.jpg",
+         "alt": "Smiling boy in a festive kurta set and turban"},
+        {"src": _P + "kids-festive-kurta-set-2.jpg",
+         "alt": "Boy in a blue festive kurta set carrying a bag"},
+        {"src": _P + "kids-festive-kurta-set-3.jpg",
+         "alt": "Child in a yellow festive kurta outfit at a celebration"},
     ],
     # --- Accessories ---
     "silk-pocket-square": [
-        _u("photo-1602810316693-3667c854239a"),
-        _u("photo-1603252110481-7ba873bf42ab"),
+        {"src": _P + "silk-pocket-square-1.jpg",
+         "alt": "Folded silk pocket square in a beige suit breast pocket"},
+        {"src": _P + "silk-pocket-square-2.jpg",
+         "alt": "Close-up of a beige suit jacket with a silk pocket square"},
+        {"src": _P + "silk-pocket-square-3.jpg",
+         "alt": "Man adjusting his tie with a silk pocket square in his suit"},
     ],
     "leather-belt": [
-        _u("photo-1602810320073-1230c46d89d4"),
-        _u("photo-1642764873654-9eef0467b342"),
+        {"src": _P + "leather-belt-1.jpg",
+         "alt": "Black leather belt worn with grey trousers"},
+        {"src": _P + "leather-belt-2.jpg",
+         "alt": "Brown leather belt with a brushed metal buckle"},
     ],
     "cotton-stole": [
-        _u("photo-1463335361701-e90f4c5045d0"),
-        _u("photo-1622207691293-5cd80466dab3"),
+        {"src": _P + "cotton-stole-1.jpg",
+         "alt": "Woman wrapped in a knitted cotton stole"},
+        {"src": _P + "cotton-stole-2.jpg",
+         "alt": "Woman wearing a patterned cotton stole indoors"},
+        {"src": _P + "cotton-stole-3.jpg",
+         "alt": "Woman in a white printed cotton stole standing outdoors"},
     ],
 }
 
-# Big model photos for the home page "Shop by Category" tiles.
+# "Shop by Category" tiles on the home page.
 CATEGORY_IMAGES = {
-    "men":         _u("photo-1772736243289-872f9ac73cf8", w=1000),
-    "women":       _u("photo-1640745690917-41cacbf557c3", w=1000),
-    "kids":        _u("photo-1578897367107-2828e351c8a8", w=1000),
-    "accessories": _u("photo-1602810318383-e386cc2a3ccf", w=1000),
+    "men":         _H + "category-men.jpg",
+    "women":       _H + "category-women.jpg",
+    "kids":        _H + "category-kids.jpg",
+    "accessories": _H + "category-accessories.jpg",
 }
 
-# Hero "models" split on home: one male model, one female model.
+# Hero "models" split on the home page: one male model, one female model.
 MODEL_IMAGES = {
-    "men":   _u("photo-1770359993283-a2c2f386584e", w=1200),
-    "women": _u("photo-1619516388835-2b60acc4049e", w=1200),
+    "men":   _H + "hero-men.jpg",
+    "women": _H + "hero-women.jpg",
 }

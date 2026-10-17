@@ -1,7 +1,15 @@
-// Veloura front-end JS (Phase 2)
-// 1) Mobile burger menu toggle
+// Veloura front-end JS
+// Sections:
+//   1) Mobile burger menu
+//   2) Shop page: auto-submit the sort dropdown
+//   3) Product gallery: thumbnail switching + hover zoom
+//   4) Product variants: size + colour → stock, quantity, buttons
 
 document.addEventListener("DOMContentLoaded", () => {
+
+    // ---------------------------------------------------------------
+    // 1) Mobile burger menu toggle
+    // ---------------------------------------------------------------
     const burger = document.getElementById("nav-burger");
     const links = document.getElementById("nav-links");
 
@@ -13,74 +21,239 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 2) Shop page: sort dropdown — submit the form as soon as value changes
+    // ---------------------------------------------------------------
+    // 2) Shop page: sort dropdown submits the form as soon as it changes
+    //    (the min/max inputs belong to the same form, so they survive)
+    // ---------------------------------------------------------------
     const sortSelect = document.getElementById("sort-select");
     if (sortSelect) {
-        sortSelect.addEventListener("change", () => {
-            // min/max inputs are part of the same form, so they are kept.
-            sortSelect.form.submit();
+        sortSelect.addEventListener("change", () => sortSelect.form.submit());
+    }
+
+    // ---------------------------------------------------------------
+    // 3) Product gallery — big photo + clickable thumbnails + zoom
+    // ---------------------------------------------------------------
+    const mainImg = document.getElementById("pd-main-img");
+    const thumbs = document.getElementById("pd-thumbs");
+    const mainWrap = document.getElementById("pd-main-wrap");
+
+    if (mainImg && thumbs) {
+        // Clicking a thumbnail swaps it into the big frame.
+        thumbs.addEventListener("click", (event) => {
+            const thumb = event.target.closest(".pd-thumb");
+            if (!thumb) return;
+
+            mainImg.src = thumb.dataset.full;
+            mainImg.alt = thumb.dataset.alt || mainImg.alt;
+
+            thumbs.querySelectorAll(".pd-thumb").forEach((t) => t.classList.remove("active"));
+            thumb.classList.add("active");
         });
     }
 
-    // 3) Product detail: size buttons — highlight one at a time
-    const sizeOptions = document.getElementById("size-options");
-    if (sizeOptions) {
-        sizeOptions.addEventListener("click", (event) => {
-            const btn = event.target.closest(".size-btn");
-            if (!btn || btn.disabled) return;
-            sizeOptions.querySelectorAll(".size-btn").forEach((b) => {
-                b.classList.remove("selected");
-                b.setAttribute("aria-pressed", "false");
+    if (mainImg && mainWrap) {
+        // Subtle zoom that follows the cursor (desktop only, pointer devices).
+        const canHover = window.matchMedia("(hover: hover)").matches;
+        if (canHover) {
+            mainWrap.addEventListener("mousemove", (event) => {
+                const rect = mainWrap.getBoundingClientRect();
+                const x = ((event.clientX - rect.left) / rect.width) * 100;
+                const y = ((event.clientY - rect.top) / rect.height) * 100;
+                mainImg.style.transformOrigin = `${x}% ${y}%`;
+                mainWrap.classList.add("zoom");
             });
-            btn.classList.add("selected");
-            btn.setAttribute("aria-pressed", "true");
-        });
+            mainWrap.addEventListener("mouseleave", () => {
+                mainWrap.classList.remove("zoom");
+                mainImg.style.transformOrigin = "center center";
+            });
+        }
     }
 
-    // 4) Product detail: quantity + / − buttons (min 1, max = stock)
+    // ---------------------------------------------------------------
+    // 4) Variants: size + colour together decide the stock
+    // ---------------------------------------------------------------
+    const layout = document.getElementById("pd-layout");
+    const sizeOptions = document.getElementById("size-options");
+    const colourOptions = document.getElementById("colour-options");
+    const stockLine = document.getElementById("pd-stock");
     const qtyInput = document.getElementById("qty-input");
     const qtyMinus = document.getElementById("qty-minus");
     const qtyPlus = document.getElementById("qty-plus");
+    const addBtn = document.getElementById("add-to-cart-btn");
+    const cartMsg = document.getElementById("cart-msg");
+    const waBtn = document.getElementById("whatsapp-btn");
 
-    if (qtyInput && qtyMinus && qtyPlus) {
-        const minQty = parseInt(qtyInput.min, 10) || 1;
-        const maxQty = parseInt(qtyInput.max, 10) || 99;
-
-        function clampQty(value) {
-            return Math.min(maxQty, Math.max(minQty, value));
+    if (layout && sizeOptions && colourOptions && qtyInput) {
+        // Variant data comes from the server as JSON:
+        // [{id, size, colour, stock}, …]
+        let variants = [];
+        try {
+            variants = JSON.parse(layout.dataset.variants || "[]");
+        } catch (error) {
+            variants = [];
         }
 
-        function refreshQtyButtons() {
+        const waNumber = layout.dataset.whatsapp || "";
+        const productName = layout.dataset.productName || "";
+        const productPrice = layout.dataset.productPrice || "";
+        const pageUrl = layout.dataset.url || window.location.href;
+
+        // Whole-product stock — if it is 0 the page stays "Out of stock".
+        const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+
+        let selectedSize = null;
+        let selectedColour = null;
+
+        const variantFor = (size, colour) =>
+            variants.find((v) => v.size === size && v.colour === colour);
+
+        // A combination counts only if that exact variant exists and has stock.
+        const inStock = (size, colour) => {
+            const variant = variantFor(size, colour);
+            return Boolean(variant && variant.stock > 0);
+        };
+
+        // --- quantity stepper ---
+        const minQty = 1;
+        const maxQty = () => parseInt(qtyInput.max, 10) || 1;
+
+        const clampQty = (value) => Math.min(maxQty(), Math.max(minQty, value));
+
+        const refreshQtyButtons = () => {
             const current = parseInt(qtyInput.value, 10) || minQty;
             qtyMinus.disabled = current <= minQty;
-            qtyPlus.disabled = current >= maxQty;
-        }
+            qtyPlus.disabled = current >= maxQty();
+        };
 
         qtyMinus.addEventListener("click", () => {
             qtyInput.value = clampQty((parseInt(qtyInput.value, 10) || minQty) - 1);
             refreshQtyButtons();
         });
-
         qtyPlus.addEventListener("click", () => {
             qtyInput.value = clampQty((parseInt(qtyInput.value, 10) || minQty) + 1);
             refreshQtyButtons();
         });
-
-        // Also handle typing directly in the box.
         qtyInput.addEventListener("change", () => {
             qtyInput.value = clampQty(parseInt(qtyInput.value, 10) || minQty);
             refreshQtyButtons();
         });
 
-        refreshQtyButtons();
-    }
+        // --- repaint everything from the current selection ---
+        const update = () => {
+            // Sizes: with a colour picked, only sizes in stock for it stay clickable.
+            sizeOptions.querySelectorAll(".size-btn").forEach((btn) => {
+                const size = btn.dataset.size;
+                const ok = selectedColour
+                    ? inStock(size, selectedColour)
+                    : variants.some((v) => v.size === size && v.stock > 0);
+                btn.disabled = !ok;
+                if (!ok && selectedSize === size) {
+                    selectedSize = null;
+                    btn.classList.remove("selected");
+                    btn.setAttribute("aria-pressed", "false");
+                }
+                btn.classList.toggle("selected", selectedSize === size);
+                btn.setAttribute("aria-pressed", String(selectedSize === size));
+            });
 
-    // 5) Product detail: Add to Cart button — message only (real cart in Phase 4)
-    const addToCartBtn = document.getElementById("add-to-cart-btn");
-    const cartMsg = document.getElementById("cart-msg");
-    if (addToCartBtn && cartMsg) {
-        addToCartBtn.addEventListener("click", () => {
-            cartMsg.hidden = false;
+            // Colours: with a size picked, only colours in stock for it stay clickable.
+            colourOptions.querySelectorAll(".colour-btn").forEach((btn) => {
+                const colour = btn.dataset.colour;
+                const ok = selectedSize
+                    ? inStock(selectedSize, colour)
+                    : variants.some((v) => v.colour === colour && v.stock > 0);
+                btn.disabled = !ok;
+                if (!ok && selectedColour === colour) {
+                    selectedColour = null;
+                    btn.classList.remove("selected");
+                    btn.setAttribute("aria-pressed", "false");
+                }
+                btn.classList.toggle("selected", selectedColour === colour);
+                btn.setAttribute("aria-pressed", String(selectedColour === colour));
+            });
+
+            const variant =
+                selectedSize && selectedColour
+                    ? variantFor(selectedSize, selectedColour)
+                    : null;
+
+            // Stock line for the chosen variant.
+            if (stockLine) {
+                if (variant) {
+                    if (variant.stock > 0) {
+                        stockLine.textContent = `In stock (${variant.stock} available)`;
+                        stockLine.classList.add("in-stock");
+                        stockLine.classList.remove("out-of-stock");
+                    } else {
+                        stockLine.textContent = "Out of stock";
+                        stockLine.classList.add("out-of-stock");
+                        stockLine.classList.remove("in-stock");
+                    }
+                } else if (totalStock === 0) {
+                    stockLine.textContent = "Out of stock";
+                    stockLine.classList.add("out-of-stock");
+                    stockLine.classList.remove("in-stock");
+                } else {
+                    stockLine.textContent = "Select size and colour to check stock";
+                    stockLine.classList.add("in-stock");
+                    stockLine.classList.remove("out-of-stock");
+                }
+            }
+
+            // Quantity can never exceed the selected variant's stock.
+            const stock = variant ? variant.stock : 0;
+            qtyInput.max = String(stock > 0 ? stock : 1);
+            qtyInput.value = String(clampQty(parseInt(qtyInput.value, 10) || minQty));
+            refreshQtyButtons();
+
+            // Both action buttons stay disabled until size + colour are chosen.
+            const ready = Boolean(variant && variant.stock > 0);
+            if (addBtn) addBtn.disabled = !ready;
+            if (waBtn) waBtn.disabled = !ready || !waNumber;
+        };
+
+        sizeOptions.addEventListener("click", (event) => {
+            const btn = event.target.closest(".size-btn");
+            if (!btn || btn.disabled) return;
+            selectedSize = btn.dataset.size;
+            update();
         });
+
+        colourOptions.addEventListener("click", (event) => {
+            const btn = event.target.closest(".colour-btn");
+            if (!btn || btn.disabled) return;
+            selectedColour = btn.dataset.colour;
+            update();
+        });
+
+        // --- Add to Cart: real cart arrives in Step 4 ---
+        if (addBtn && cartMsg) {
+            addBtn.addEventListener("click", () => {
+                if (addBtn.disabled) return;
+                cartMsg.textContent = "Cart is coming soon";
+                cartMsg.hidden = false;
+            });
+        }
+
+        // --- Order on WhatsApp: prefilled wa.me message ---
+        if (waBtn) {
+            waBtn.addEventListener("click", () => {
+                if (waBtn.disabled) return;
+                const quantity = qtyInput.value || "1";
+                const message = [
+                    "Hi! I would like to order:",
+                    `Product: ${productName}`,
+                    `Size: ${selectedSize}`,
+                    `Colour: ${selectedColour}`,
+                    `Quantity: ${quantity}`,
+                    `Price: ${productPrice}`,
+                    `Link: ${pageUrl}`,
+                ].join("\n");
+                const target = `https://wa.me/${waNumber}?text=${encodeURIComponent(message)}`;
+                window.open(target, "_blank", "noopener");
+            });
+        }
+
+        update();   // paint the initial state
     }
 });
