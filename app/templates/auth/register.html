@@ -1,0 +1,58 @@
+{#- Register page — name, email, phone, password + confirm. CSRF protected. -#}
+{% extends "base.html" %}
+
+{% block title %}Register — Veloura{% endblock %}
+{% block meta_description %}Create a Veloura account for faster checkout and order tracking.{% endblock %}
+
+{% block content %}
+<section class="auth-section">
+    <div class="auth-card">
+        <h1 class="auth-title">Create account</h1>
+        <p class="auth-subtitle">Join Veloura — checkout faster, track orders easily</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <p class="flash flash-{{ category }}">{{ message }}</p>
+            {% endfor %}
+        {% endwith %}
+
+        <form method="post" class="auth-form" novalidate>
+            {{ form.hidden_tag() }}
+
+            <div class="form-field">
+                {{ form.name.label }}
+                {{ form.name(placeholder="Full name", autocomplete="name") }}
+                {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.email.label }}
+                {{ form.email(placeholder="you@example.com", autocomplete="email") }}
+                {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.phone.label }}
+                {{ form.phone(placeholder="10-digit mobile number", autocomplete="tel") }}
+                {% for error in form.phone.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.password.label }}
+                {{ form.password(placeholder="Minimum 8 characters", autocomplete="new-password") }}
+                {% for error in form.password.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.confirm.label }}
+                {{ form.confirm(placeholder="Repeat your password", autocomplete="new-password") }}
+                {% for error in form.confirm.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            {{ form.submit(class="btn btn-primary auth-submit") }}
+        </form>
+
+        <p class="auth-switch">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+    </div>
+</section>
+{% endblock %}

@@ -12,13 +12,20 @@ What happens here:
 """
 
 from flask import Flask
+from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf import CSRFProtect
 
 from config import get_config
 
 # `db` is the shared SQLAlchemy object. Models and routes import it from here:
 #   from app import db
 db = SQLAlchemy()
+
+# Flask-Login keeps the logged-in user in the session ("current_user").
+login_manager = LoginManager()
+# Flask-WTF checks the CSRF token hidden in every HTML form.
+csrf = CSRFProtect()
 
 
 def inr(value):
@@ -57,12 +64,28 @@ def create_app():
     # Connect the database to this app.
     db.init_app(app)
 
+    # Customer login (Flask-Login) + CSRF protection on every form.
+    login_manager.init_app(app)
+    csrf.init_app(app)
+    login_manager.login_view = "auth.login"          # where ?next= redirects
+    login_manager.login_message_category = "info"    # flash style
+
+    # Secure session cookie defaults (protects the login session).
+    app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
+    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
+    # Secure cookies only make sense over HTTPS (production).
+    if not app.debug:
+        app.config.setdefault("SESSION_COOKIE_SECURE", True)
+
     # Money formatting filter, available in every template.
     app.jinja_env.filters["inr"] = inr
 
     # Register routes. Each Blueprint is a group of related pages.
     from app.routes.main import main_bp
     app.register_blueprint(main_bp)
+
+    from app.routes.auth import auth_bp
+    app.register_blueprint(auth_bp)
 
     # Custom 404 page (clean message instead of Flask's default error page).
     from flask import render_template
@@ -75,5 +98,23 @@ def create_app():
     # (seed.py also calls create_all — harmless to do it twice.)
     with app.app_context():
         db.create_all()
+        _migrate_user_columns()
 
     return app
+
+
+def _migrate_user_columns():
+    """Add the customer-login columns to an existing users table if missing.
+
+    db.create_all() only creates *missing tables*, never missing columns, so a
+    database made in Step 2 needs this one-time ALTER. Safe to run repeatedly;
+    existing rows (the admin account) are left untouched.
+    """
+    from sqlalchemy import inspect
+
+    columns = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    if "name" not in columns:
+        db.session.execute(db.text("ALTER TABLE users ADD COLUMN name VARCHAR(120)"))
+    if "phone" not in columns:
+        db.session.execute(db.text("ALTER TABLE users ADD COLUMN phone VARCHAR(20)"))
+    db.session.commit()

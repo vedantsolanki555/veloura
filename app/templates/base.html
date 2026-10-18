@@ -73,6 +73,20 @@
                     </svg>
                 </a>
 
+                <!-- Auth: logged out = Login / Register; logged in = first name + Logout -->
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('auth.account') }}" class="nav-auth-link nav-user" title="My account">
+                        {{ current_user.first_name or "Account" }}
+                    </a>
+                    <form method="post" action="{{ url_for('auth.logout') }}" class="nav-logout-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="nav-auth-link nav-logout">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{{ url_for('auth.login') }}" class="nav-auth-link">Login</a>
+                    <a href="{{ url_for('auth.register') }}" class="nav-auth-link nav-register">Register</a>
+                {% endif %}
+
                 <!-- Burger button: visible only on mobile -->
                 <button class="nav-burger" id="nav-burger" aria-label="Menu" aria-expanded="false">
                     <span></span><span></span><span></span>

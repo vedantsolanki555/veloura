@@ -3,7 +3,7 @@
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
 Har naya step aane par is file ko update karte raho.
 
-**Status updated:** Step 3 ke baad (items 1–14 ke hisaab se).
+**Status updated:** Step 4 Feature 1 (Customer Login) ke baad.
 
 ---
 
@@ -16,6 +16,10 @@ Har naya step aane par is file ko update karte raho.
 | Category Shop | `/shop/<slug>` | Ek category ke products (men, women, kids, accessories) | 2 | **Done** |
 | Product Detail | `/product/<id>` | Gallery (thumbs + zoom), size + colour selector, per-variant stock, WhatsApp order, related products | 3 | **Done** (Add to Cart abhi "Cart is coming soon" dikhata hai — real cart Step 4 me) |
 | 404 | (koi bhi galat URL) | "Page not found" + Back to Shop button | 3 | **Done** |
+| Register | `/register` | Name, email, phone, password + confirm (CSRF, min 8 chars) | 4 | **Done** |
+| Login | `/login` | Email + password (generic error, rate limit 5/15 min per IP+email) | 4 | **Done** |
+| Logout | `/logout` | POST-only, CSRF protected | 4 | **Done** |
+| My Account | `/account` | Profile + "My orders" placeholder (real orders Feature 3 me) | 4 | **Done** |
 | Cart | `/cart` | Session cart, quantity update, shipping + total | 4 | Baaki |
 | Checkout | `/checkout` | Address form (COD only), CSRF + honeypot | 4 | Baaki |
 | Order Success | `/order/<id>` | COD order confirmation | 4 | Baaki |
@@ -25,7 +29,7 @@ Har naya step aane par is file ko update karte raho.
 | Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 5 | Baaki |
 | SEO + Deploy | — | sitemap, robots, meta, Render deploy | 6 | Baaki |
 
-**Customer login/signup nahi hai** — cart session-based hai (Step 4 spec ke hisaab se).
+**Customer login done (Feature 1)** — cart session-based hai (Feature 3 me asli cart).
 
 ---
 
@@ -54,17 +58,20 @@ Har naya step aane par is file ko update karte raho.
 
 Database file (local dev): `instance/veloura.db`
 
-### 1. users — admin account (login Step 5 me)
+### 1. users — customer + admin accounts
 
 | Column | Type | Kaam |
 | --- | --- | --- |
 | id | Integer (PK) | Unique number |
-| email | String(120), unique | Login email |
+| name | String(120) | Customer ka poora naam (admin rows me NULL ho sakta hai) |
+| email | String(120), unique | Login email — hamesha lowercase store hota hai |
+| phone | String(20) | Customer ka phone (admin rows me NULL ho sakta hai) |
 | password_hash | String(256) | Password ka hash (plain text kabhi nahi) |
 | is_admin | Boolean | `True` = admin |
 | created_at | DateTime | Account kab bana |
 
-Abhi rows: **1** (sirf admin — `admin@veloura.local`)
+Abhi rows: **1** (sirf admin — `admin@veloura.local`; test users cleanup me delete ho jaate hain)
+Purani database me ye columns `_migrate_user_columns()` se startup par add ho jaate hain (app/__init__.py).
 
 ### 2. categories — product groups
 
@@ -127,6 +134,7 @@ Abhi rows: **0**
 ## Quick notes
 
 - **Local dev server:** `python wsgi.py` → http://127.0.0.1:5000/
+- **Feature 1 tests:** `python tools/test_feature1.py` (33 checks — register, login, logout, CSRF, rate limit, next-redirect).
 - **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
   Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`
 - **Admin login (abhi):** `admin@veloura.local` / `admin123` — production se pehle change karna zaroori hai.

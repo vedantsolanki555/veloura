@@ -1,0 +1,57 @@
+{#- Account page — profile details + My orders placeholder (real orders in Feature 3). -#}
+{% extends "base.html" %}
+
+{% block title %}My Account — Veloura{% endblock %}
+{% block meta_description %}Your Veloura profile and orders.{% endblock %}
+
+{% block content %}
+<section class="account-section container">
+    <h1 class="account-title">My account</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <p class="flash flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="account-grid">
+        <!-- Profile card -->
+        <div class="account-card">
+            <h2>Profile</h2>
+            <dl class="profile-list">
+                <div>
+                    <dt>Name</dt>
+                    <dd>{{ current_user.name or "—" }}</dd>
+                </div>
+                <div>
+                    <dt>Email</dt>
+                    <dd>{{ current_user.email }}</dd>
+                </div>
+                <div>
+                    <dt>Phone</dt>
+                    <dd>{{ current_user.phone or "—" }}</dd>
+                </div>
+                <div>
+                    <dt>Member since</dt>
+                    <dd>{{ current_user.created_at.strftime("%d %b %Y") if current_user.created_at else "—" }}</dd>
+                </div>
+            </dl>
+
+            <!-- Logout is a POST form (CSRF protected) so no stray link can log you out. -->
+            <form method="post" action="{{ url_for('auth.logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline">Log out</button>
+            </form>
+        </div>
+
+        <!-- Orders card (placeholder until Feature 3 fills real orders) -->
+        <div class="account-card">
+            <h2>My orders</h2>
+            <div class="orders-empty">
+                <p>You haven't placed any orders yet.</p>
+                <a href="{{ url_for('main.shop') }}" class="btn btn-primary">Start shopping</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

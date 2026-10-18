@@ -17,18 +17,27 @@ Tables:
 
 from datetime import datetime, timezone
 
+from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from app import db
 
 
-class User(db.Model):
-    """Admin user. Password is stored as a hash, never as plain text."""
+class User(UserMixin, db.Model):
+    """Customer (and admin) account. Password is stored as a hash, never plain text.
+
+    Admin rows may have NULL name/phone (they were created before customer
+    login existed). Customer registrations always fill both in.
+    """
 
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=True)
+    # Email is always stored lowercase so "Ravi@X.com" and "ravi@x.com"
+    # can never create two accounts.
     email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    phone = db.Column(db.String(20), nullable=True)
     password_hash = db.Column(db.String(256), nullable=False)
     is_admin = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
@@ -40,6 +49,11 @@ class User(db.Model):
     def check_password(self, password):
         """Return True if the given password matches the stored hash."""
         return check_password_hash(self.password_hash, password)
+
+    @property
+    def first_name(self):
+        """First word of the full name — used in the navbar."""
+        return (self.name or "").split(" ")[0] if self.name else ""
 
     def __repr__(self):
         return f"<User {self.email}>"
