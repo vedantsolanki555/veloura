@@ -9,33 +9,69 @@
 <section class="shop-header">
     <h1>{{ page_title }}</h1>
     {% if search_query %}
-        <p>{{ products|length }} result{{ 's' if products|length != 1 }} for “{{ search_query }}”</p>
+        <p>{{ pagination.total }} result{{ 's' if pagination.total != 1 }} for “{{ search_query }}”</p>
     {% else %}
-        <p>{{ products|length }} product{{ 's' if products|length != 1 }}</p>
+        <p>{{ pagination.total }} product{{ 's' if pagination.total != 1 }}</p>
+    {% endif %}
+    {% if products %}
+        <p class="shop-showing">Showing {{ range_start }}–{{ range_end }} of {{ pagination.total }}</p>
     {% endif %}
 </section>
 
 <!-- ============ FILTER CHIPS (category links) ============ -->
 <div class="container">
     <div class="filter-bar">
-        <a href="{{ url_for('main.shop', q=search_query or none, min=min_price or none, max=max_price or none, sort=sort if sort != 'newest' else none) }}"
+        <a href="{{ url_for('main.shop', q=search_query or none, min=min_price or none, max=max_price or none, sort=sort if sort != 'newest' else none, size=active_size or none, colour=active_colour or none) }}"
            class="filter-chip {{ 'active' if not active_category }}">All</a>
         {% for cat in all_categories %}
-            <a href="{{ url_for('main.shop_category', slug=cat.slug, q=search_query or none, min=min_price or none, max=max_price or none, sort=sort if sort != 'newest' else none) }}"
+            <a href="{{ cat_url(cat.slug) }}"
                class="filter-chip {{ 'active' if active_category == cat.slug }}">{{ cat.name }}</a>
         {% endfor %}
     </div>
+
+    <!-- ============ SIZE FILTER ============ -->
+    {% if all_sizes %}
+    <div class="filter-bar filter-bar-compact">
+        <span class="filter-bar-label">Size</span>
+        <a href="{{ shop_url(size=None) }}"
+           class="filter-chip {{ 'active' if not active_size }}">All</a>
+        {% for s in all_sizes %}
+            <a href="{{ shop_url(size=s) }}"
+               class="filter-chip {{ 'active' if active_size == s }}">{{ s }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- ============ COLOUR FILTER ============ -->
+    {% if all_colours %}
+    <div class="filter-bar filter-bar-compact">
+        <span class="filter-bar-label">Colour</span>
+        <a href="{{ shop_url(colour=None) }}"
+           class="filter-chip {{ 'active' if not active_colour }}">All</a>
+        {% for c in all_colours %}
+            <a href="{{ shop_url(colour=c) }}"
+               class="filter-chip {{ 'active' if active_colour == c }}">{{ c }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
 
     <!-- ============ PRICE FILTER + SORT ============ -->
     <!--
       GET form: page URL depends on category (action), other filters stay in inputs.
       min/max submitted with Apply button; sort auto-submits via JS (main.js).
+      The page number is never in the form, so any change returns to page 1.
     -->
     <form class="shop-toolbar"
           method="get"
           action="{{ url_for('main.shop_category', slug=active_category) if active_category else url_for('main.shop') }}">
         {% if search_query %}
             <input type="hidden" name="q" value="{{ search_query }}">
+        {% endif %}
+        {% if active_size %}
+            <input type="hidden" name="size" value="{{ active_size }}">
+        {% endif %}
+        {% if active_colour %}
+            <input type="hidden" name="colour" value="{{ active_colour }}">
         {% endif %}
 
         <div class="price-filter">
@@ -75,6 +111,25 @@
                 <br>
                 <a href="{{ url_for('main.shop') }}" class="btn btn-outline">View all products</a>
             </div>
+        {% endif %}
+
+        <!-- ============ PAGINATION ============ -->
+        {% if pagination.pages > 1 %}
+            <nav class="pagination" aria-label="Product pages">
+                {% if pagination.has_prev %}
+                    <a class="page-link" href="{{ page_link(pagination.prev_num) }}">← Prev</a>
+                {% endif %}
+                {% for n in page_numbers %}
+                    {% if n == pagination.page %}
+                        <span class="page-link active" aria-current="page">{{ n }}</span>
+                    {% else %}
+                        <a class="page-link" href="{{ page_link(n) }}">{{ n }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.has_next %}
+                    <a class="page-link" href="{{ page_link(pagination.next_num) }}">Next →</a>
+                {% endif %}
+            </nav>
         {% endif %}
     </div>
 </section>

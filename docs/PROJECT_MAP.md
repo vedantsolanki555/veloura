@@ -3,7 +3,7 @@
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
 Har naya step aane par is file ko update karte raho.
 
-**Status updated:** Step 4 Feature 1 (Customer Login) ke baad.
+**Status updated:** Step 4 Feature 2 (Cloth List polish) ke baad.
 
 ---
 
@@ -12,7 +12,7 @@ Har naya step aane par is file ko update karte raho.
 | Page | URL | Kaam | Step | Status |
 | --- | --- | --- | --- | --- |
 | Home | `/` | Hero banner, featured, categories, new arrivals, Why Veloura | 2 | **Done** |
-| Shop | `/shop` | Product grid, category filter, price filter, sort, search | 2 | **Done** |
+| Shop | `/shop` | Product grid, category/size/colour/price filters, sort, search, pagination (12/page) | 2+4 | **Done** (Feature 2 polish) |
 | Category Shop | `/shop/<slug>` | Ek category ke products (men, women, kids, accessories) | 2 | **Done** |
 | Product Detail | `/product/<id>` | Gallery (thumbs + zoom), size + colour selector, per-variant stock, WhatsApp order, related products | 3 | **Done** (Add to Cart abhi "Cart is coming soon" dikhata hai — real cart Step 4 me) |
 | 404 | (koi bhi galat URL) | "Page not found" + Back to Shop button | 3 | **Done** |
@@ -29,7 +29,7 @@ Har naya step aane par is file ko update karte raho.
 | Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 5 | Baaki |
 | SEO + Deploy | — | sitemap, robots, meta, Render deploy | 6 | Baaki |
 
-**Customer login done (Feature 1)** — cart session-based hai (Feature 3 me asli cart).
+**Feature 1 (Login) done.** **Feature 2 (Cloth list) done** — size + colour filter chips, pagination 12/page (filters URL me rehte hain), hover second image, out-of-stock badge, no N+1 (selectinload). Cart session-based hai (Feature 3 me asli cart).
 
 ---
 
@@ -135,6 +135,7 @@ Abhi rows: **0**
 
 - **Local dev server:** `python wsgi.py` → http://127.0.0.1:5000/
 - **Feature 1 tests:** `python tools/test_feature1.py` (33 checks — register, login, logout, CSRF, rate limit, next-redirect).
+- **Feature 2 tests:** `python tools/test_feature2.py` (53 checks — filters, sort, search, pagination, badges, N+1 query guard).
 - **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
   Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`
 - **Admin login (abhi):** `admin@veloura.local` / `admin123` — production se pehle change karna zaroori hai.

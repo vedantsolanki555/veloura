@@ -14,7 +14,7 @@ instance/
 *.db
 
 # Dev server files
-server.log
+*.log
 server.pid
 
 # Editor / OS junk

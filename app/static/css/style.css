@@ -408,6 +408,17 @@ h1, h2, h3, h4 {
     color: #fff;
 }
 .badge-sale { background: var(--sale); }
+/* Out of stock: top-right so it never clashes with Sale/New on the left */
+.badge-oos { left: auto; right: 12px; background: var(--text-soft); }
+
+/* Second photo fades in on hover (desktop only — see media query below) */
+.product-card .card-img .card-img-hover {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.45s var(--ease);
+}
+.product-card:hover .card-img .card-img-hover { opacity: 1; }
 
 .card-body {
     padding: 18px 18px 22px;
@@ -536,6 +547,50 @@ h1, h2, h3, h4 {
     border: 1px solid var(--primary);
     border-radius: 6px;
     transition: background 0.25s var(--ease), border-color 0.25s var(--ease);
+}
+
+/* ---------- 9c. Size / colour filter rows + pagination ---------- */
+.filter-bar-compact {
+    justify-content: flex-start;
+    padding-bottom: 18px;
+}
+.filter-bar-label {
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    margin-right: 4px;
+    align-self: center;
+}
+.shop-showing {
+    font-size: 13px;
+    color: var(--text-soft);
+    margin-top: 8px;
+}
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding: 48px 0 24px;
+}
+.page-link {
+    min-width: 40px;
+    text-align: center;
+    padding: 9px 14px;
+    font-size: 13px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    color: var(--text);
+    transition: border-color 0.25s var(--ease), background 0.25s var(--ease);
+}
+.page-link:hover { border-color: var(--primary); }
+.page-link.active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
 }
 .btn-apply:hover {
     background: var(--accent);
@@ -997,6 +1052,8 @@ h1, h2, h3, h4 {
     .nav-burger { display: flex; }
 
     .product-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    /* No hover on touch devices — skip loading the second image visually */
+    .product-card .card-img .card-img-hover { display: none; }
     .category-grid { grid-template-columns: 1fr; }
     .why-grid { grid-template-columns: 1fr; }
     .models-split { grid-template-columns: 1fr; }

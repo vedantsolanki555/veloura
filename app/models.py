@@ -99,8 +99,13 @@ class Product(db.Model):
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=False)
 
     # One product has many images and many variants.
+    # Images always load in gallery order (position 0 first).
     images = db.relationship(
-        "ProductImage", backref="product", lazy=True, cascade="all, delete-orphan"
+        "ProductImage",
+        backref="product",
+        lazy=True,
+        cascade="all, delete-orphan",
+        order_by="ProductImage.position",
     )
     variants = db.relationship(
         "ProductVariant", backref="product", lazy=True, cascade="all, delete-orphan"

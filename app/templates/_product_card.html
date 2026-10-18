@@ -1,14 +1,23 @@
 {#-
   Reusable product card — used on Home + Shop pages.
-  Expects: product (Product object with .category and .images loaded)
+  Expects: product (Product object with .category, .images, .variants loaded)
 -#}
+{% set stock_total = product.variants | sum(attribute="stock") %}
 <article class="product-card">
     <a href="{{ url_for('main.product_detail', product_id=product.id) }}" class="card-img">
-        {% set img = product.images[0] if product.images else None %}
+        {% set imgs = product.images %}
+        {% set img = imgs[0] if imgs else None %}
         <img src="{{ img.image_url if img else 'https://placehold.co/600x800?text=Veloura' }}"
              alt="{{ img.alt if img and img.alt else product.name }}" loading="lazy">
+        {# Second photo fades in on hover (desktop only, see CSS). #}
+        {% if imgs and imgs|length > 1 %}
+            <img src="{{ imgs[1].image_url }}" alt="" aria-hidden="true"
+                 loading="lazy" class="card-img-hover">
+        {% endif %}
 
-        {% if product.discount_price %}
+        {% if stock_total == 0 %}
+            <span class="badge badge-oos">Out of stock</span>
+        {% elif product.discount_price %}
             <span class="badge badge-sale">Sale</span>
         {% elif product.is_new %}
             <span class="badge">New</span>

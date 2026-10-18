@@ -53,6 +53,12 @@
                     {% if request.args.get('sort') and request.args.get('sort') != 'newest' %}
                         <input type="hidden" name="sort" value="{{ request.args.get('sort') }}">
                     {% endif %}
+                    {% if request.args.get('size') %}
+                        <input type="hidden" name="size" value="{{ request.args.get('size') }}">
+                    {% endif %}
+                    {% if request.args.get('colour') %}
+                        <input type="hidden" name="colour" value="{{ request.args.get('colour') }}">
+                    {% endif %}
                     <input type="search" name="q" placeholder="Search products…"
                            value="{{ request.args.get('q', '') }}" aria-label="Search products">
                     <button type="submit" aria-label="Search">
