@@ -16,7 +16,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from flask_wtf import FlaskForm
 from wtforms import PasswordField, StringField, SubmitField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError
+from wtforms.validators import DataRequired, EqualTo, Length, ValidationError
 
 from app import db, login_manager
 from app.models import User
@@ -26,11 +26,22 @@ auth_bp = Blueprint("auth", __name__)
 
 # ---------- forms ----------
 
+def validate_email_format(_form, field):
+    """Simple email check: must contain one @ and a dot after it.
+
+    WTForms' built-in Email() rejects valid local addresses like
+    admin@veloura.local (no public TLD), so we use this lighter check.
+    """
+    value = (field.data or "").strip()
+    if value.count("@") != 1 or "." not in value.split("@")[-1]:
+        raise ValidationError("Enter a valid email address.")
+
+
 class RegisterForm(FlaskForm):
     """Sign-up form. Server-side validation — never trust the browser."""
 
     name = StringField("Full name", validators=[DataRequired(), Length(min=2, max=120)])
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=120)])
+    email = StringField("Email", validators=[DataRequired(), validate_email_format, Length(max=120)])
     phone = StringField("Phone (10-digit mobile)", validators=[DataRequired(), Length(min=10, max=20)])
     password = PasswordField("Password", validators=[DataRequired(), Length(min=8, max=256)])
     confirm = PasswordField("Confirm password", validators=[DataRequired(), EqualTo("password", message="Passwords do not match.")])
@@ -50,7 +61,7 @@ class RegisterForm(FlaskForm):
 class LoginForm(FlaskForm):
     """Log-in form. The error message is always generic on purpose."""
 
-    email = StringField("Email", validators=[DataRequired(), Email(), Length(max=120)])
+    email = StringField("Email", validators=[DataRequired(), validate_email_format, Length(max=120)])
     password = PasswordField("Password", validators=[DataRequired()])
     submit = SubmitField("Log in")
 

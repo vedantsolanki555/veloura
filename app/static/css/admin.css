@@ -1,0 +1,335 @@
+/* ============================================================
+   VELOURA — Admin panel styles
+   Same design tokens as the store (ink, ivory, champagne gold).
+   ============================================================ */
+
+/* ---------- 1. Shell layout ---------- */
+.admin-body {
+    background: var(--bg);
+}
+
+.admin-shell {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---------- 2. Sidebar ---------- */
+.admin-sidebar {
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    transition: transform 0.3s var(--ease);
+    z-index: 50;
+}
+
+.admin-sidebar-head {
+    padding: 28px 24px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.admin-logo {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--primary);
+    display: block;
+}
+
+.admin-logo-sub {
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--accent);
+}
+
+.admin-nav {
+    display: flex;
+    flex-direction: column;
+    padding: 16px 12px;
+    gap: 2px;
+    flex: 1;
+}
+
+.admin-nav-link {
+    display: block;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text-soft);
+    border-radius: 8px;
+    border: none;
+    background: none;
+    text-align: left;
+    width: 100%;
+    transition: background 0.3s var(--ease), color 0.3s var(--ease);
+}
+
+.admin-nav-link:hover {
+    background: var(--bg);
+    color: var(--text);
+}
+
+.admin-nav-link.active {
+    background: var(--bg);
+    color: var(--primary);
+    font-weight: 500;
+    box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.admin-sidebar-foot {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.admin-logout-btn {
+    cursor: pointer;
+    font-family: inherit;
+}
+
+/* ---------- 3. Mobile bar + burger ---------- */
+.admin-mobile-bar {
+    display: none;
+    position: sticky;
+    top: 0;
+    z-index: 60;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+    align-items: center;
+    gap: 14px;
+}
+
+.admin-mobile-title {
+    font-family: var(--font-heading);
+    font-size: 18px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.admin-burger {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: none;
+    padding: 4px;
+}
+
+.admin-burger span {
+    width: 22px;
+    height: 2px;
+    background: var(--text);
+}
+
+.admin-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 45;
+}
+
+.admin-overlay.visible { display: block; }
+
+/* ---------- 4. Main content ---------- */
+.admin-main {
+    flex: 1;
+    min-width: 0;
+}
+
+.admin-main-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 32px 28px 64px;
+}
+
+.admin-page-head {
+    margin-bottom: 28px;
+}
+
+.admin-page-head h1 {
+    font-size: 2rem;
+}
+
+.admin-page-sub {
+    color: var(--text-soft);
+    font-size: 14px;
+    margin-top: 4px;
+}
+
+/* ---------- 5. Cards + stats ---------- */
+.admin-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 24px;
+}
+
+.admin-card h2 {
+    font-size: 1.2rem;
+    margin-bottom: 16px;
+}
+
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-label {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+}
+
+.stat-value {
+    font-family: var(--font-heading);
+    font-size: 1.9rem;
+    font-weight: 500;
+    color: var(--primary);
+}
+
+.stat-note {
+    font-size: 12px;
+    color: var(--text-soft);
+}
+
+/* ---------- 6. Status pills + badges ---------- */
+.status-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.status-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    background: var(--bg);
+}
+
+.status-name {
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+.status-count {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.status-badge {
+    display: inline-block;
+    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+}
+
+.status-badge.status-new        { color: #7a5c1e; border-color: #e6d3a3; background: #fbf5e6; }
+.status-badge.status-confirmed  { color: #1e4d7a; border-color: #a3c4e6; background: #eef5fb; }
+.status-badge.status-shipped    { color: #4d1e7a; border-color: #c4a3e6; background: #f5eefb; }
+.status-badge.status-delivered  { color: #2e5c31; border-color: #c8e6c9; background: #f1faf1; }
+.status-badge.status-cancelled  { color: #9b2c2c; border-color: #f0c4c4; background: #fdf3f3; }
+
+/* ---------- 7. Tables ---------- */
+.admin-table-wrap { overflow-x: auto; }
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.admin-table th {
+    text-align: left;
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    font-weight: 500;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+.admin-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+
+.admin-table tr:last-child td { border-bottom: none; }
+
+.admin-empty {
+    color: var(--text-soft);
+    font-size: 14px;
+}
+
+.stock-badge {
+    display: inline-block;
+    min-width: 32px;
+    text-align: center;
+    font-size: 13px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+}
+
+.stock-badge.stock-low  { color: #7a5c1e; border-color: #e6d3a3; background: #fbf5e6; }
+.stock-badge.stock-zero { color: #9b2c2c; border-color: #f0c4c4; background: #fdf3f3; }
+
+/* ---------- 8. Two column layout ---------- */
+.admin-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+
+/* ---------- 9. Responsive: sidebar becomes a drawer ---------- */
+@media (max-width: 860px) {
+    .admin-mobile-bar { display: flex; }
+
+    .admin-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        transform: translateX(-100%);
+    }
+
+    .admin-sidebar.open { transform: translateX(0); }
+
+    .admin-main-inner { padding: 20px 16px 48px; }
+
+    .admin-two-col { grid-template-columns: 1fr; }
+}

@@ -3,7 +3,7 @@
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
 Har naya step aane par is file ko update karte raho.
 
-**Status updated:** Step 4 Feature 2 (Cloth List polish) ke baad.
+**Status updated:** Step 5 Feature 1 (Admin access + Dashboard) ke baad.
 
 ---
 
@@ -23,13 +23,14 @@ Har naya step aane par is file ko update karte raho.
 | Cart | `/cart` | Session cart, quantity update, shipping + total | 4 | Baaki |
 | Checkout | `/checkout` | Address form (COD only), CSRF + honeypot | 4 | Baaki |
 | Order Success | `/order/<id>` | COD order confirmation | 4 | Baaki |
-| Admin Login | `/admin/login` | Sirf admin ke liye login | 5 | Baaki |
+| Admin Dashboard | `/admin` | Stats: products, categories, orders by status, sales, low stock, recent orders | 5 | **Done** (Feature 1) |
 | Admin Products | `/admin/products` | Products add/edit/delete | 5 | Baaki |
 | Admin Categories | `/admin/categories` | Categories add/edit/delete | 5 | Baaki |
 | Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 5 | Baaki |
 | SEO + Deploy | — | sitemap, robots, meta, Render deploy | 6 | Baaki |
 
 **Feature 1 (Login) done.** **Feature 2 (Cloth list) done** — size + colour filter chips, pagination 12/page (filters URL me rehte hain), hover second image, out-of-stock badge, no N+1 (selectinload). Cart session-based hai (Feature 3 me asli cart).
+**Step 5 Feature 1 (Admin access + dashboard) done** — `is_admin` flag, `flask make-admin <email>` CLI, /admin dashboard (totals, orders by status, today's orders, total sales, low stock ≤3, recent 10 orders), sidebar layout (mobile drawer), navbar me sirf admin ko "Admin" link. Normal customer ko /admin par 403, anonymous ko /login redirect. Email validator me `.local` TLD support fix kiya (admin@veloura.local ab login kar sakta hai).
 
 ---
 
@@ -136,6 +137,7 @@ Abhi rows: **0**
 - **Local dev server:** `python wsgi.py` → http://127.0.0.1:5000/
 - **Feature 1 tests:** `python tools/test_feature1.py` (33 checks — register, login, logout, CSRF, rate limit, next-redirect).
 - **Feature 2 tests:** `python tools/test_feature2.py` (53 checks — filters, sort, search, pagination, badges, N+1 query guard).
+- **Step 5 Feature 1 tests:** `python tools/test_admin1.py` (29 checks — make-admin CLI, access control, dashboard numbers, sidebar).
 - **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
   Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`
 - **Admin login (abhi):** `admin@veloura.local` / `admin123` — production se pehle change karna zaroori hai.

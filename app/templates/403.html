@@ -1,0 +1,12 @@
+{#- 403 page — logged in user tried an admin-only page without being admin. -#}
+{% extends "base.html" %}
+
+{% block title %}403 — Not allowed — Veloura{% endblock %}
+
+{% block content %}
+<section class="coming-soon">
+    <h1>403 — Not Allowed</h1>
+    <p>Yeh page sirf admin ke liye hai.</p>
+    <a href="{{ url_for('main.home') }}" class="btn btn-outline">Back to Home</a>
+</section>
+{% endblock %}

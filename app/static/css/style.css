@@ -1114,6 +1114,14 @@ h1, h2, h3, h4 {
 .nav-user { color: var(--text); }
 .nav-user:hover { color: var(--accent); }
 
+/* Admin link — small gold accent so it stands out for the owner only */
+.nav-admin {
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 5px 12px;
+}
+.nav-admin:hover { background: var(--accent); color: #fff; }
+
 .nav-logout-form { display: inline; margin: 0; }
 .nav-logout { cursor: pointer; }
 

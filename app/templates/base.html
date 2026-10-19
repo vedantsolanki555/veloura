@@ -81,6 +81,10 @@
 
                 <!-- Auth: logged out = Login / Register; logged in = first name + Logout -->
                 {% if current_user.is_authenticated %}
+                    {# Admin link: sirf admin ko dikhta hai, normal customer ko nahi. #}
+                    {% if current_user.is_admin %}
+                        <a href="{{ url_for('admin.dashboard') }}" class="nav-auth-link nav-admin">Admin</a>
+                    {% endif %}
                     <a href="{{ url_for('auth.account') }}" class="nav-auth-link nav-user" title="My account">
                         {{ current_user.first_name or "Account" }}
                     </a>

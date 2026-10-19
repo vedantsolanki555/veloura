@@ -87,12 +87,24 @@ def create_app():
     from app.routes.auth import auth_bp
     app.register_blueprint(auth_bp)
 
-    # Custom 404 page (clean message instead of Flask's default error page).
+    # Admin panel (Step 5) — all /admin routes, admin-only.
+    from app.routes.admin import admin_bp
+    app.register_blueprint(admin_bp)
+
+    # Custom CLI commands (flask make-admin <email>).
+    from app.cli import register_commands
+    register_commands(app)
+
+    # Custom error pages (clean messages instead of Flask's defaults).
     from flask import render_template
 
     @app.errorhandler(404)
     def not_found(_error):
         return render_template("404.html"), 404
+
+    @app.errorhandler(403)
+    def forbidden(_error):
+        return render_template("403.html"), 403
 
     # Create database tables on first run so the app works even before seed.py.
     # (seed.py also calls create_all — harmless to do it twice.)

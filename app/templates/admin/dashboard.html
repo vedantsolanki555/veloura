@@ -1,0 +1,104 @@
+{#- Admin dashboard — store ke totals, orders by status, low stock, recent orders. -#}
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head">
+    <h1>Dashboard</h1>
+    <p class="admin-page-sub">Aaj ka store overview</p>
+</div>
+
+{# ---- Top stat cards ---- #}
+<div class="stat-grid">
+    <div class="stat-card">
+        <span class="stat-label">Products</span>
+        <span class="stat-value">{{ total_products }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Categories</span>
+        <span class="stat-value">{{ total_categories }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Orders (total)</span>
+        <span class="stat-value">{{ total_orders }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Orders today</span>
+        <span class="stat-value">{{ todays_orders }}</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-label">Total sales</span>
+        <span class="stat-value">{{ total_sales | inr }}</span>
+        <span class="stat-note">cancelled orders excluded</span>
+    </div>
+</div>
+
+{# ---- Orders by status ---- #}
+<section class="admin-card">
+    <h2>Orders by status</h2>
+    <div class="status-grid">
+        {% for status in ["New", "Confirmed", "Shipped", "Delivered", "Cancelled"] %}
+        <div class="status-pill status-{{ status | lower }}">
+            <span class="status-name">{{ status }}</span>
+            <span class="status-count">{{ status_counts[status] }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</section>
+
+{# ---- Low stock + recent orders side by side ---- #}
+<div class="admin-two-col">
+
+    <section class="admin-card">
+        <h2>Low stock (≤ {{ low_stock_level }})</h2>
+        {% if low_stock %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>Product</th><th>Size</th><th>Colour</th><th>Stock</th></tr>
+                </thead>
+                <tbody>
+                    {% for v in low_stock %}
+                    <tr>
+                        <td>{{ v.product.name if v.product else "—" }}</td>
+                        <td>{{ v.size }}</td>
+                        <td>{{ v.colour }}</td>
+                        <td><span class="stock-badge {{ 'stock-zero' if v.stock == 0 else 'stock-low' }}">{{ v.stock }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="admin-empty">Sab variants ka stock theek hai.</p>
+        {% endif %}
+    </section>
+
+    <section class="admin-card">
+        <h2>Recent orders</h2>
+        {% if recent_orders %}
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr><th>#</th><th>Customer</th><th>Total</th><th>Status</th><th>Date</th></tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                    <tr>
+                        <td>{{ order.id }}</td>
+                        <td>{{ order.customer_name }}</td>
+                        <td>{{ order.total | inr }}</td>
+                        <td><span class="status-badge status-{{ order.status | lower }}">{{ order.status }}</span></td>
+                        <td>{{ order.created_at.strftime("%d %b %Y") if order.created_at else "—" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="admin-empty">Abhi tak koi order nahi aaya.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
