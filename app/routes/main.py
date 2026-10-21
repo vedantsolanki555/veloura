@@ -49,7 +49,7 @@ def home():
             selectinload(Product.images),
             selectinload(Product.variants),
         )
-        .filter_by(is_featured=True)
+        .filter_by(is_featured=True, is_active=True)
         .order_by(Product.created_at.desc())
         .limit(4)
         .all()
@@ -62,7 +62,7 @@ def home():
             selectinload(Product.images),
             selectinload(Product.variants),
         )
-        .filter_by(is_new=True)
+        .filter_by(is_new=True, is_active=True)
         .order_by(Product.created_at.desc())
         .limit(8)
         .all()
@@ -115,7 +115,7 @@ def product_detail(product_id):
             joinedload(Product.images),
             joinedload(Product.variants),
         )
-        .filter_by(id=product_id)
+        .filter_by(id=product_id, is_active=True)
         .first_or_404()
     )
 
@@ -154,6 +154,7 @@ def product_detail(product_id):
         .filter(
             Product.category_id == product.category_id,
             Product.id != product.id,
+            Product.is_active.is_(True),
         )
         .order_by(Product.created_at.desc())
         .limit(4)
@@ -200,7 +201,7 @@ def _query_products(category_slug):
         joinedload(Product.category),
         selectinload(Product.images),
         selectinload(Product.variants),
-    )
+    ).filter(Product.is_active.is_(True))
 
     # --- category filter ---
     if category_slug:

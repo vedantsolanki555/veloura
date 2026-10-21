@@ -17,6 +17,9 @@ instance/
 *.log
 server.pid
 
+# Uploaded product images (never commit user uploads)
+app/static/uploads/
+
 # Editor / OS junk
 .vscode/
 .idea/

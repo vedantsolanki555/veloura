@@ -1,0 +1,238 @@
+{#- Admin — add / edit product form.
+
+    Sab kuch ek page par: product details + variants rows + images.
+    Variants JS se add/remove hote hain (parallel inputs: variant_size etc.).
+-#}
+{% extends "admin/base.html" %}
+
+{% block title %}{{ "New product" if not product else "Edit " + product.name }} — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head admin-page-head-row">
+    <div>
+        <h1>{{ "New product" if not product else "Edit product" }}</h1>
+        {% if product %}
+        <p class="admin-page-sub">
+            <a href="{{ url_for('main.product_detail', product_id=product.id) }}" target="_blank" rel="noopener">
+                View in store ↗
+            </a>
+        </p>
+        {% endif %}
+    </div>
+    {% if product %}
+    <form method="post" action="{{ url_for('admin.product_delete', product_id=product.id) }}"
+          class="admin-inline"
+          data-confirm="Delete '{{ product.name }}'? If it has orders it will only be hidden, otherwise it is removed permanently.">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn-outline admin-delete-btn">Delete product</button>
+    </form>
+    {% endif %}
+</div>
+
+{# ============ PRODUCT DETAILS ============ #}
+<section class="admin-card">
+    <h2>Details</h2>
+    <form method="post" enctype="multipart/form-data" class="admin-form" novalidate id="product-form">
+        {{ form.hidden_tag() }}
+
+        <div class="admin-form-grid">
+            <div class="form-field">
+                {{ form.name.label }}
+                {{ form.name(placeholder="e.g. Men's Silk Kurta", id="field-name") }}
+                {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.slug.label }}
+                {{ form.slug(placeholder="auto-generated if blank", id="field-slug") }}
+                {% for error in form.slug.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.category_id.label }}
+                {{ form.category_id() }}
+                {% for error in form.category_id.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.price.label }}
+                {{ form.price(placeholder="2499", min="1", step="1") }}
+                {% for error in form.price.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-field">
+                {{ form.discount_price.label }}
+                {{ form.discount_price(placeholder="leave blank if no sale", min="1", step="1") }}
+                {% for error in form.discount_price.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-field">
+            {{ form.description.label }}
+            {{ form.description(rows=4, placeholder="Product details…") }}
+            {% for error in form.description.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="form-field">
+            {{ form.fabric_care.label }}
+            {{ form.fabric_care(rows=3, placeholder="Fabric and care instructions…") }}
+            {% for error in form.fabric_care.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div class="admin-checkbox-row">
+            <label>{{ form.is_featured() }} Featured on home page</label>
+            <label>{{ form.is_new() }} New arrival</label>
+            <label>{{ form.is_active() }} Active (visible in store)</label>
+        </div>
+
+        {# ============ VARIANTS (dynamic rows) ============ #}
+        <div class="admin-variants">
+            <div class="admin-variants-head">
+                <h3>Variants (size + colour + stock)</h3>
+                <button type="button" class="btn-mini" id="add-variant-btn">+ Add row</button>
+            </div>
+            <p class="admin-hint">Har size + colour combination sirf ek baar. Stock 0 se kam nahi ho sakta.</p>
+            <div id="variant-rows"></div>
+        </div>
+
+        {# ============ IMAGES ============ #}
+        {% if product %}
+        <div class="admin-images">
+            <h3>Images</h3>
+            <p class="admin-hint">JPG, PNG ya WEBP — max 5 MB each. Pehli image main image hoti hai.</p>
+
+            {% if images %}
+            <div class="admin-image-grid">
+                {% for image in images %}
+                <div class="admin-image-card {{ 'main-image' if loop.first }}">
+                    <img src="{{ image.image_url }}" alt="{{ image.alt }}">
+                    {% if loop.first %}<span class="main-badge">Main</span>{% endif %}
+                    <div class="admin-image-actions">
+                        {% if not loop.first %}
+                        <form method="post" action="{{ url_for('admin.image_set_main', image_id=image.id) }}" class="admin-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-mini">Make main</button>
+                        </form>
+                        {% endif %}
+                        <form method="post" action="{{ url_for('admin.image_move', image_id=image.id) }}" class="admin-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="direction" value="left">
+                            <button type="submit" class="btn-mini" {{ 'disabled' if loop.first }} aria-label="Move left">←</button>
+                        </form>
+                        <form method="post" action="{{ url_for('admin.image_move', image_id=image.id) }}" class="admin-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <input type="hidden" name="direction" value="right">
+                            <button type="submit" class="btn-mini" {{ 'disabled' if loop.last }} aria-label="Move right">→</button>
+                        </form>
+                        <form method="post" action="{{ url_for('admin.image_delete', image_id=image.id) }}" class="admin-inline"
+                              data-confirm="Delete this image?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-mini btn-mini-danger">✕</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="admin-empty">Abhi koi image nahi. Neeche se upload karo.</p>
+            {% endif %}
+
+            <form method="post" action="{{ url_for('admin.product_images_upload', product_id=product.id) }}"
+                  enctype="multipart/form-data" class="admin-upload-row">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="file" name="images" accept=".jpg,.jpeg,.png,.webp" multiple required>
+                <button type="submit" class="btn btn-outline btn-small">Upload images</button>
+            </form>
+        </div>
+        {% else %}
+        {# New product: images can be chosen right here, saved with the product. #}
+        <div class="form-field">
+            <label for="field-images">Images (optional — add more after saving)</label>
+            <input type="file" name="images" id="field-images"
+                   accept=".jpg,.jpeg,.png,.webp" multiple>
+            <p class="admin-hint">JPG, PNG ya WEBP — max 5 MB each.</p>
+        </div>
+        {% endif %}
+
+        <div class="admin-form-actions">
+            <button type="submit" class="btn btn-primary">{{ "Save product" if product else "Create product" }}</button>
+            <a href="{{ url_for('admin.products') }}" class="btn btn-outline">Back to list</a>
+        </div>
+    </form>
+</section>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+// ---- Variants editor: add / remove rows with parallel named inputs ----
+(function () {
+    var rowsBox = document.getElementById("variant-rows");
+    var addBtn = document.getElementById("add-variant-btn");
+    if (!rowsBox || !addBtn) return;
+
+    // Existing variants come from the server as JSON (empty for a new product).
+    var existing = {{ variants_json | safe }};
+
+    function makeRow(data) {
+        data = data || {};
+        var row = document.createElement("div");
+        row.className = "variant-row";
+        // Every input posts a value in the same list — the server zips them
+        // together by index (see _parse_variants_from_request in admin.py).
+        row.innerHTML =
+            '<input type="hidden" name="variant_id" value="' + (data.id || "") + '">' +
+            '<input type="text" name="variant_size" placeholder="Size (M, L, Free…)" ' +
+            'value="' + escapeHtml(data.size || "") + '" maxlength="20" required>' +
+            '<input type="text" name="variant_colour" placeholder="Colour (Indigo…)" ' +
+            'value="' + escapeHtml(data.colour || "") + '" maxlength="50" required>' +
+            '<input type="number" name="variant_stock" placeholder="Stock" min="0" step="1" ' +
+            'value="' + (data.stock != null ? data.stock : "") + '" required>' +
+            '<button type="button" class="btn-mini btn-mini-danger remove-variant">✕</button>';
+        row.querySelector(".remove-variant").addEventListener("click", function () {
+            row.remove();
+        });
+        return row;
+    }
+
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    existing.forEach(function (v) { rowsBox.appendChild(makeRow(v)); });
+    // A new product starts with one blank row so the form is never empty.
+    if (existing.length === 0) rowsBox.appendChild(makeRow());
+
+    addBtn.addEventListener("click", function () {
+        rowsBox.appendChild(makeRow());
+    });
+})();
+
+// ---- Slug preview: auto-fill slug from the name until the admin edits it ----
+(function () {
+    var nameField = document.getElementById("field-name");
+    var slugField = document.getElementById("field-slug");
+    if (!nameField || !slugField) return;
+
+    var touchedByAdmin = slugField.value !== "";  // editing an existing product
+    slugField.addEventListener("input", function () { touchedByAdmin = true; });
+
+    nameField.addEventListener("input", function () {
+        if (touchedByAdmin) return;
+        slugField.value = nameField.value.toLowerCase()
+            .replace(/'/g, "")
+            .replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    });
+})();
+
+// ---- Confirm dialog before delete submits ----
+document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+        if (!window.confirm(form.getAttribute("data-confirm"))) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

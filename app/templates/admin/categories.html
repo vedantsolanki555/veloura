@@ -1,0 +1,61 @@
+{#- Admin categories — list + add form + edit/delete buttons. -#}
+{% extends "admin/base.html" %}
+
+{% block title %}Categories — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head">
+    <h1>Categories</h1>
+    <p class="admin-page-sub">Store ke product groups (Men, Women, ...)</p>
+</div>
+
+{# ---- Add category ---- #}
+<section class="admin-card">
+    <h2>Add category</h2>
+    <form method="post" class="admin-inline-form" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="form-field admin-inline-field">
+            {{ form.name.label }}
+            {{ form.name(placeholder="e.g. Unisex") }}
+            {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+</section>
+
+{# ---- Existing categories ---- #}
+<section class="admin-card">
+    <h2>All categories</h2>
+    {% if categories %}
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr><th>Name</th><th>Slug</th><th>Products</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+                {% for category in categories %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td><code>{{ category.slug }}</code></td>
+                    <td>{{ product_counts.get(category.id, 0) }}</td>
+                    <td class="admin-actions">
+                        <a href="{{ url_for('admin.category_edit', category_id=category.id) }}"
+                           class="btn-mini">Edit</a>
+                        <form method="post"
+                              action="{{ url_for('admin.category_delete', category_id=category.id) }}"
+                              class="admin-inline"
+                              data-confirm="Delete category '{{ category.name }}'? This cannot be undone.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-mini btn-mini-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p class="admin-empty">Abhi koi category nahi hai. Upar se add karo.</p>
+    {% endif %}
+</section>
+{% endblock %}

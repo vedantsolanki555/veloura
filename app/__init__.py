@@ -111,6 +111,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         _migrate_user_columns()
+        _migrate_step5_columns()
 
     return app
 
@@ -129,4 +130,32 @@ def _migrate_user_columns():
         db.session.execute(db.text("ALTER TABLE users ADD COLUMN name VARCHAR(120)"))
     if "phone" not in columns:
         db.session.execute(db.text("ALTER TABLE users ADD COLUMN phone VARCHAR(20)"))
+    db.session.commit()
+
+
+def _migrate_step5_columns():
+    """Add Step 5 admin columns to existing tables if missing.
+
+    - products.is_active      — hide a product from the store without deleting it
+    - product_images.public_id — Cloudinary id so we can delete/replace uploads
+
+    Safe to run repeatedly; existing rows are untouched.
+    """
+    from sqlalchemy import inspect
+
+    inspector = inspect(db.engine)
+
+    product_cols = {c["name"] for c in inspector.get_columns("products")}
+    if "is_active" not in product_cols:
+        # Default TRUE so every existing product stays visible after the upgrade.
+        db.session.execute(db.text(
+            "ALTER TABLE products ADD COLUMN is_active BOOLEAN DEFAULT TRUE NOT NULL"
+        ))
+
+    image_cols = {c["name"] for c in inspector.get_columns("product_images")}
+    if "public_id" not in image_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE product_images ADD COLUMN public_id VARCHAR(300)"
+        ))
+
     db.session.commit()

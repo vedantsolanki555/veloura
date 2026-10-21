@@ -37,17 +37,15 @@
             </div>
 
             <nav class="admin-nav">
-                {# Dashboard ka route Feature 1 me hai; baaki Feature 2/3 me judega.
-                   Abhi literal paths — jab route ban jayega tab url_for me badal denge. #}
                 <a href="{{ url_for('admin.dashboard') }}"
                    class="admin-nav-link {{ 'active' if request.endpoint == 'admin.dashboard' }}">
                     Dashboard
                 </a>
-                <a href="/admin/products"
+                <a href="{{ url_for('admin.products') }}"
                    class="admin-nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.products') }}">
                     Products
                 </a>
-                <a href="/admin/categories"
+                <a href="{{ url_for('admin.categories') }}"
                    class="admin-nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.categories') }}">
                     Categories
                 </a>

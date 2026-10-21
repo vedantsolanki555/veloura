@@ -3,7 +3,7 @@
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
 Har naya step aane par is file ko update karte raho.
 
-**Status updated:** Step 5 Feature 1 (Admin access + Dashboard) ke baad.
+**Status updated:** Step 5 Feature 2 (Categories + Products) ke baad.
 
 ---
 
@@ -24,13 +24,14 @@ Har naya step aane par is file ko update karte raho.
 | Checkout | `/checkout` | Address form (COD only), CSRF + honeypot | 4 | Baaki |
 | Order Success | `/order/<id>` | COD order confirmation | 4 | Baaki |
 | Admin Dashboard | `/admin` | Stats: products, categories, orders by status, sales, low stock, recent orders | 5 | **Done** (Feature 1) |
-| Admin Products | `/admin/products` | Products add/edit/delete | 5 | Baaki |
-| Admin Categories | `/admin/categories` | Categories add/edit/delete | 5 | Baaki |
+| Admin Products | `/admin/products` | List (search/filter, 20/page), add/edit form + variants editor + Cloudinary/local images, soft/hard delete | 5 | **Done** (Feature 2) |
+| Admin Categories | `/admin/categories` | List + add/edit/delete (delete blocked jab tak products hain), auto unique slug | 5 | **Done** (Feature 2) |
 | Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 5 | Baaki |
 | SEO + Deploy | — | sitemap, robots, meta, Render deploy | 6 | Baaki |
 
 **Feature 1 (Login) done.** **Feature 2 (Cloth list) done** — size + colour filter chips, pagination 12/page (filters URL me rehte hain), hover second image, out-of-stock badge, no N+1 (selectinload). Cart session-based hai (Feature 3 me asli cart).
 **Step 5 Feature 1 (Admin access + dashboard) done** — `is_admin` flag, `flask make-admin <email>` CLI, /admin dashboard (totals, orders by status, today's orders, total sales, low stock ≤3, recent 10 orders), sidebar layout (mobile drawer), navbar me sirf admin ko "Admin" link. Normal customer ko /admin par 403, anonymous ko /login redirect. Email validator me `.local` TLD support fix kiya (admin@veloura.local ab login kar sakta hai).
+**Step 5 Feature 2 (Categories + products) done** — categories add/edit/delete (products hon par delete blocked, auto unique slug), products list (search, category + stock filter, 20/page pagination), product form (slug auto, discount < price check), variants editor (add/remove rows, duplicate size+colour blocked, stock ≥ 0), images (Cloudinary ya local `app/static/uploads/` fallback, jpg/png/webp max 5 MB, set main / reorder / delete), soft delete (orders hain) vs hard delete (orders nahi), inactive products shop se gayab. Har admin form CSRF-protected.
 
 ---
 
@@ -71,7 +72,7 @@ Database file (local dev): `instance/veloura.db`
 | is_admin | Boolean | `True` = admin |
 | created_at | DateTime | Account kab bana |
 
-Abhi rows: **1** (sirf admin — `admin@veloura.local`; test users cleanup me delete ho jaate hain)
+Abhi rows: **2** (1 admin — `admin@veloura.local`, 1 customer registration)
 Purani database me ye columns `_migrate_user_columns()` se startup par add ho jaate hain (app/__init__.py).
 
 ### 2. categories — product groups
@@ -94,6 +95,7 @@ Abhi rows: **4**
 | discount_price | Numeric(10,2), nullable | Sale price; NULL = no discount |
 | fabric_care | Text | Fabric aur care instructions |
 | is_featured / is_new | Boolean | Home page sections |
+| is_active | Boolean | `False` = shop se gayab (soft delete/hide) — Step 5 F2 me add hua |
 | created_at | DateTime | Kab add hua |
 | category_id | Integer (FK) | Kis category ka product |
 
@@ -104,9 +106,10 @@ Abhi rows: **18**
 | Column | Type | Kaam |
 | --- | --- | --- |
 | id | Integer (PK) | Unique number |
-| image_url | String(500) | Local file path, jaise `/static/img/products/mens-silk-kurta-1.jpg` |
+| image_url | String(500) | Local file path ya Cloudinary URL |
+| public_id | String(300), nullable | Cloudinary public_id (delete ke liye); NULL = local file — Step 5 F2 me add hua |
 | alt | String(300) | Screen readers ke liye alt text |
-| position | Integer | Gallery order (0 = pehli photo) |
+| position | Integer | Gallery order (0 = pehli / main photo) |
 | product_id | Integer (FK) | Kis product ki photo |
 
 Abhi rows: **52** (har product ki 2–3 photos, sab local, `app/static/img/products/` me)
@@ -138,6 +141,8 @@ Abhi rows: **0**
 - **Feature 1 tests:** `python tools/test_feature1.py` (33 checks — register, login, logout, CSRF, rate limit, next-redirect).
 - **Feature 2 tests:** `python tools/test_feature2.py` (53 checks — filters, sort, search, pagination, badges, N+1 query guard).
 - **Step 5 Feature 1 tests:** `python tools/test_admin1.py` (29 checks — make-admin CLI, access control, dashboard numbers, sidebar).
+- **Step 5 Feature 2 tests:** `python tools/test_admin2.py` (44 checks — category CRUD rules, product form validation, variants, images, delete rules, filters, pagination).
+- **Photo uploads:** `CLOUDINARY_URL` set hai to Cloudinary; nahi hai to `app/static/uploads/` (git-ignored, README me clearly documented).
 - **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
   Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`
 - **Admin login (abhi):** `admin@veloura.local` / `admin123` — production se pehle change karna zaroori hai.

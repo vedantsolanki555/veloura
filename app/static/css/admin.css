@@ -315,7 +315,266 @@
     align-items: start;
 }
 
-/* ---------- 9. Responsive: sidebar becomes a drawer ---------- */
+/* ---------- 9. Forms (categories + products) ---------- */
+.admin-form { display: flex; flex-direction: column; gap: 18px; }
+
+.admin-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 18px;
+}
+
+.admin-form .form-field input,
+.admin-form .form-field select,
+.admin-form .form-field textarea,
+.admin-inline-form input,
+.admin-filter-bar input,
+.admin-filter-bar select {
+    width: 100%;
+    padding: 10px 12px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: border-color 0.3s var(--ease);
+}
+
+.admin-form .form-field input:focus,
+.admin-form .form-field select:focus,
+.admin-form .form-field textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+}
+
+.admin-form textarea { resize: vertical; }
+
+.admin-inline-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.admin-inline-field { flex: 1; min-width: 220px; }
+
+.admin-filter-bar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.admin-filter-bar input { max-width: 260px; }
+.admin-filter-bar select { max-width: 180px; }
+
+.admin-form-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.admin-hint {
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+.admin-checkbox-row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    font-size: 14px;
+}
+
+.admin-checkbox-row label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.admin-inline { display: inline; }
+
+.admin-delete-btn { border-color: var(--sale); color: var(--sale); }
+.admin-delete-btn:hover { background: var(--sale); color: #fff; }
+
+.admin-page-head-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.admin-card-narrow { max-width: 480px; }
+
+/* ---------- 10. Small action buttons ---------- */
+.btn-mini {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-family: var(--font-body);
+    color: var(--text-soft);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s var(--ease);
+}
+
+.btn-mini:hover { border-color: var(--accent); color: var(--accent); }
+.btn-mini:disabled { opacity: 0.4; cursor: default; }
+
+.btn-mini-danger:hover { border-color: var(--sale); color: var(--sale); }
+
+.admin-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- 11. Product list extras ---------- */
+.admin-thumb {
+    width: 44px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    display: block;
+}
+
+.admin-thumb-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-soft);
+    background: var(--bg);
+}
+
+.admin-product-name { font-weight: 500; }
+.admin-product-name:hover { color: var(--accent); }
+
+.admin-slug { color: var(--text-soft); font-size: 12px; }
+.admin-sale { color: var(--sale); }
+
+.admin-flags { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.flag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-soft);
+    white-space: nowrap;
+}
+
+.flag-featured { color: #7a5c1e; border-color: #e6d3a3; background: #fbf5e6; }
+.flag-new      { color: #2e5c31; border-color: #c8e6c9; background: #f1faf1; }
+.flag-inactive { color: #9b2c2c; border-color: #f0c4c4; background: #fdf3f3; }
+
+.admin-pagination {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 18px;
+    justify-content: center;
+}
+
+.admin-page-info { font-size: 13px; color: var(--text-soft); }
+
+/* ---------- 12. Variants editor ---------- */
+.admin-variants { margin-top: 8px; }
+
+.admin-variants-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.admin-variants-head h3 { font-size: 1.05rem; }
+
+.variant-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 110px auto;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.variant-row input {
+    padding: 8px 10px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+}
+
+.variant-row input:focus { outline: none; border-color: var(--accent); }
+
+/* ---------- 13. Image manager ---------- */
+.admin-images { margin-top: 8px; }
+.admin-images h3 { font-size: 1.05rem; margin-bottom: 6px; }
+
+.admin-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+}
+
+.admin-image-card {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--surface);
+}
+
+.admin-image-card img {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    display: block;
+}
+
+.admin-image-card.main-image { border-color: var(--accent); }
+
+.main-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: var(--accent);
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+.admin-image-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding: 8px;
+    justify-content: center;
+}
+
+.admin-upload-row {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.admin-upload-row input[type="file"] {
+    font-size: 13px;
+    font-family: var(--font-body);
+}
+
+/* ---------- 99. Responsive: sidebar becomes a drawer ---------- */
 @media (max-width: 860px) {
     .admin-mobile-bar { display: flex; }
 
@@ -332,4 +591,7 @@
     .admin-main-inner { padding: 20px 16px 48px; }
 
     .admin-two-col { grid-template-columns: 1fr; }
+
+    .variant-row { grid-template-columns: 1fr 1fr; }
+    .variant-row input[type="number"] { grid-column: 1 / -1; }
 }

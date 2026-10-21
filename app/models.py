@@ -93,6 +93,8 @@ class Product(db.Model):
     fabric_care = db.Column(db.Text, default="")
     is_featured = db.Column(db.Boolean, default=False, nullable=False)
     is_new = db.Column(db.Boolean, default=False, nullable=False)
+    # Inactive products are hidden from the store (soft delete / hide).
+    is_active = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Foreign key: which category this product belongs to.
@@ -122,6 +124,9 @@ class ProductImage(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     image_url = db.Column(db.String(500), nullable=False)
+    # Cloudinary public_id (needed to delete/replace the image on Cloudinary).
+    # NULL = the file lives locally in app/static/uploads/.
+    public_id = db.Column(db.String(300), nullable=True)
     # Alt text read by screen readers (and shown if the image fails to load).
     alt = db.Column(db.String(300), default="", nullable=False)
     # Position controls display order (0 = first image).

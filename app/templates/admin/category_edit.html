@@ -1,0 +1,30 @@
+{#- Admin — edit one category's name. -#}
+{% extends "admin/base.html" %}
+
+{% block title %}Edit {{ category.name }} — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head">
+    <h1>Edit category</h1>
+    <p class="admin-page-sub">Slug (URL) nahi badlega — sirf naam update hota hai.</p>
+</div>
+
+<section class="admin-card admin-card-narrow">
+    <form method="post" class="admin-form" novalidate>
+        {{ form.hidden_tag() }}
+
+        <div class="form-field">
+            {{ form.name.label }}
+            {{ form.name(placeholder="e.g. Men") }}
+            {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+        </div>
+
+        <p class="admin-hint">Current slug: <code>{{ category.slug }}</code></p>
+
+        <div class="admin-form-actions">
+            {{ form.submit(class="btn btn-primary") }}
+            <a href="{{ url_for('admin.categories') }}" class="btn btn-outline">Cancel</a>
+        </div>
+    </form>
+</section>
+{% endblock %}

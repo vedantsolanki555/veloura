@@ -1,0 +1,128 @@
+{#- Admin products — searchable list with filters + pagination (20/page). -#}
+{% extends "admin/base.html" %}
+
+{% block title %}Products — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head admin-page-head-row">
+    <div>
+        <h1>Products</h1>
+        <p class="admin-page-sub">{{ pagination.total }} product(s)</p>
+    </div>
+    <a href="{{ url_for('admin.product_new') }}" class="btn btn-primary">+ Add product</a>
+</div>
+
+{# ---- Filters (GET form — values stay in the URL) ---- #}
+<section class="admin-card">
+    <form method="get" class="admin-filter-bar">
+        <input type="search" name="q" placeholder="Search name or slug…"
+               value="{{ search }}" aria-label="Search products">
+
+        <select name="category" aria-label="Filter by category">
+            <option value="">All categories</option>
+            {% for c in all_categories %}
+            <option value="{{ c.id }}" {{ 'selected' if category_filter == c.id | string }}>{{ c.name }}</option>
+            {% endfor %}
+        </select>
+
+        <select name="stock" aria-label="Filter by stock">
+            <option value="">Any stock</option>
+            <option value="in" {{ 'selected' if stock_filter == 'in' }}>In stock</option>
+            <option value="out" {{ 'selected' if stock_filter == 'out' }}>Out of stock</option>
+            <option value="low" {{ 'selected' if stock_filter == 'low' }}>Low stock (≤3)</option>
+            <option value="inactive" {{ 'selected' if stock_filter == 'inactive' }}>Inactive only</option>
+        </select>
+
+        <button type="submit" class="btn btn-outline btn-small">Filter</button>
+        {% if search or category_filter or stock_filter %}
+        <a href="{{ url_for('admin.products') }}" class="btn-mini">Clear</a>
+        {% endif %}
+    </form>
+</section>
+
+{# ---- Product table ---- #}
+<section class="admin-card">
+    {% if products %}
+    <div class="admin-table-wrap">
+        <table class="admin-table admin-table-products">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Name</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                    <th>Stock</th>
+                    <th>Flags</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for product in products %}
+                {% set total_stock = product.variants | map(attribute='stock') | sum %}
+                <tr>
+                    <td>
+                        {% set thumb = thumb_url(product) %}
+                        {% if thumb %}
+                        <img src="{{ thumb }}" alt="" class="admin-thumb">
+                        {% else %}
+                        <span class="admin-thumb admin-thumb-empty">—</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.product_edit', product_id=product.id) }}"
+                           class="admin-product-name">{{ product.name }}</a>
+                        <br><small class="admin-slug">{{ product.slug }}</small>
+                    </td>
+                    <td>{{ product.category.name if product.category else "—" }}</td>
+                    <td>
+                        {{ product.price | inr }}
+                        {% if product.discount_price %}
+                        <br><small class="admin-sale">{{ product.discount_price | inr }} (sale)</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="stock-badge {{ 'stock-zero' if total_stock == 0 else ('stock-low' if total_stock <= 3) }}">
+                            {{ total_stock }}
+                        </span>
+                    </td>
+                    <td class="admin-flags">
+                        {% if not product.is_active %}<span class="flag flag-inactive">Inactive</span>{% endif %}
+                        {% if product.is_featured %}<span class="flag flag-featured">Featured</span>{% endif %}
+                        {% if product.is_new %}<span class="flag flag-new">New</span>{% endif %}
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.product_edit', product_id=product.id) }}"
+                           class="btn-mini">Edit</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ---- Pagination ---- #}
+    {% if pagination.pages > 1 %}
+    <nav class="admin-pagination" aria-label="Product pages">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.products', page=pagination.prev_num, q=search, category=category_filter, stock=stock_filter) }}"
+           class="btn-mini">← Prev</a>
+        {% endif %}
+        <span class="admin-page-info">Page {{ pagination.page }} / {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.products', page=pagination.next_num, q=search, category=category_filter, stock=stock_filter) }}"
+           class="btn-mini">Next →</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <p class="admin-empty">
+        {% if search or category_filter or stock_filter %}
+        Koi product match nahi hua — filters hata kar dekho.
+        {% else %}
+        Abhi koi product nahi hai. "+ Add product" se pehla product banao.
+        {% endif %}
+    </p>
+    {% endif %}
+</section>
+{% endblock %}

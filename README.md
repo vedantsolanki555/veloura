@@ -40,10 +40,26 @@ Open <http://127.0.0.1:5000/> in your browser. You should see "Veloura".
 | --- | --- |
 | `SECRET_KEY` | Flask session signing key. Required. |
 | `DATABASE_URL` | PostgreSQL connection string. If unset, app uses SQLite locally (`instance/veloura.db`) — **dev fallback only, do not use SQLite in production**. |
-| `CLOUDINARY_URL` | Cloudinary credentials for image uploads (used in a later step). |
+| `CLOUDINARY_URL` | Cloudinary credentials for product image uploads (admin panel). Format: `cloudinary://API_KEY:API_SECRET@CLOUD_NAME` |
+| `WHATSAPP_NUMBER` | Digits-only WhatsApp number (country code, no `+`) for the WhatsApp order buttons. |
 | `FLASK_ENV` | `development` or `production`. |
 
 Secrets live only in environment variables (via `.env` locally, Render dashboard in production). Never hardcode them.
+
+## Product image uploads (important)
+
+Admin product images are saved in **one of two places**:
+
+1. **Cloudinary (production / recommended).** If `CLOUDINARY_URL` is set in
+   `.env`, every uploaded image goes to Cloudinary and the app stores the
+   secure URL + `public_id` in the database.
+2. **Local fallback (development).** If `CLOUDINARY_URL` is **not** set, images
+   are saved to `app/static/uploads/` instead. This keeps the admin panel
+   working locally with no Cloudinary account.
+
+Uploaded files in `app/static/uploads/` are **never committed to git**
+(`.gitignore` covers the folder) and the folder is safe to delete at any time.
+Only JPG, PNG and WEBP images up to 5 MB each are accepted.
 
 ## Deploy to Render
 
