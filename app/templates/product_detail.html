@@ -144,15 +144,28 @@
                 </div>
             </div>
 
-            <!-- Add to Cart (real cart lands in Step 4) + WhatsApp order.
-                 main.js enables them once size and colour are chosen. -->
+            <!-- Flash messages (e.g. "Added to cart") right by the buttons. -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <p class="flash flash-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endwith %}
+
+            <!-- Add to Cart (posts the chosen variant to /cart/add) + WhatsApp order.
+                 main.js fills in variant_id + quantity and enables the buttons
+                 once size and colour are chosen. -->
             <div class="pd-actions">
-                <button type="button"
-                        class="btn btn-primary pd-cart-btn"
-                        id="add-to-cart-btn"
-                        disabled>
-                    Add to Cart
-                </button>
+                <form method="post" action="{{ url_for('cart.add') }}" id="add-to-cart-form" class="pd-add-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="variant_id" id="cart-variant-id" value="">
+                    <input type="hidden" name="quantity" id="cart-qty" value="1">
+                    <button type="submit"
+                            class="btn btn-primary pd-cart-btn"
+                            id="add-to-cart-btn"
+                            disabled>
+                        Add to Cart
+                    </button>
+                </form>
 
                 <button type="button"
                         class="btn btn-outline pd-wa-btn"
@@ -161,7 +174,6 @@
                     Order on WhatsApp
                 </button>
             </div>
-            <p class="pd-cart-msg" id="cart-msg" hidden>Cart is coming soon</p>
             {% if not whatsapp_number %}
                 <p class="pd-cart-msg">WhatsApp ordering is being configured.</p>
             {% endif %}

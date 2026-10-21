@@ -40,6 +40,11 @@ class Config:
     # Silences a SQLAlchemy warning we don't need. Standard setting for Flask apps.
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # Cart / checkout shipping rules (Step 4 Feature 3).
+    # Shipping costs this much below the threshold, and is free at/above it.
+    SHIPPING_FEE = float(os.environ.get("SHIPPING_FEE", "99"))
+    FREE_SHIPPING_ABOVE = float(os.environ.get("FREE_SHIPPING_ABOVE", "1999"))
+
 
 class DevelopmentConfig(Config):
     """Settings used when FLASK_ENV=development (default locally)."""

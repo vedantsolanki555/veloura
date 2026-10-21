@@ -1,0 +1,97 @@
+{#- Cart page — session cart: update quantities, remove lines, totals. -#}
+{% extends "base.html" %}
+
+{% block title %}Your cart — Veloura{% endblock %}
+{% block meta_description %}Review the items in your Veloura cart before checkout.{% endblock %}
+
+{% block content %}
+<section class="cart-section container">
+    <h1 class="page-title">Your cart</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <p class="flash flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    {% if not lines %}
+        <!-- Friendly empty state -->
+        <div class="cart-empty">
+            <p>Your cart is empty.</p>
+            <a href="{{ url_for('main.shop') }}" class="btn btn-primary">Continue shopping</a>
+        </div>
+    {% else %}
+        <form method="post" action="{{ url_for('cart.view') }}" class="cart-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+            <div class="cart-lines">
+                {% for line in lines %}
+                <div class="cart-line">
+                    <a class="cart-line-img" href="{{ url_for('main.product_detail', product_id=line.product.id) }}">
+                        {% if line.image_url %}
+                            <img src="{{ line.image_url }}" alt="{{ line.product.name }}" loading="lazy">
+                        {% else %}
+                            <img src="https://placehold.co/120x150?text=Veloura" alt="{{ line.product.name }}" loading="lazy">
+                        {% endif %}
+                    </a>
+
+                    <div class="cart-line-info">
+                        <a class="cart-line-name" href="{{ url_for('main.product_detail', product_id=line.product.id) }}">{{ line.product.name }}</a>
+                        <p class="cart-line-meta">{{ line.variant.colour }} / {{ line.variant.size }}</p>
+                        <p class="cart-line-price">{{ line.unit_price | inr }} each</p>
+
+                        {% if line.problem %}
+                            <p class="cart-line-problem">{{ line.problem }}</p>
+                        {% endif %}
+
+                        <div class="cart-line-actions">
+                            <div class="qty-box">
+                                <label class="sr-only" for="qty-{{ line.variant_id }}">Quantity</label>
+                                <input type="number" id="qty-{{ line.variant_id }}"
+                                       name="qty-{{ line.variant_id }}"
+                                       class="qty-input" value="{{ line.quantity }}"
+                                       min="0" max="{{ line.max_stock }}">
+                            </div>
+                            <button type="submit" name="remove" value="{{ line.variant_id }}"
+                                    class="cart-remove">Remove</button>
+                        </div>
+                    </div>
+
+                    <p class="cart-line-total">{{ line.line_total | inr }}</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <button type="submit" class="btn btn-outline cart-update-btn">Update cart</button>
+        </form>
+
+        <!-- Totals + checkout -->
+        <div class="cart-summary">
+            <h2>Order summary</h2>
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>{{ subtotal | inr }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span>{% if shipping == 0 %}Free{% else %}{{ shipping | inr }}{% endif %}</span>
+            </div>
+            {% if shipping > 0 and subtotal < free_shipping_above %}
+                <p class="summary-note">Add {{ (free_shipping_above - subtotal) | inr }} more for free shipping.</p>
+            {% endif %}
+            <div class="summary-row summary-total">
+                <span>Total</span>
+                <span>{{ total | inr }}</span>
+            </div>
+
+            {% if has_problems %}
+                <p class="cart-block-note">Please fix the items marked above before checking out.</p>
+                <button class="btn btn-primary" disabled>Checkout</button>
+            {% else %}
+                <a href="{{ url_for('cart.checkout') }}" class="btn btn-primary cart-checkout-btn">Checkout</a>
+            {% endif %}
+            <a href="{{ url_for('main.shop') }}" class="cart-continue">Continue shopping</a>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

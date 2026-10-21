@@ -178,8 +178,20 @@ def logout():
 @auth_bp.route("/account")
 @login_required
 def account():
-    """Profile page. The orders list is a placeholder until Feature 3."""
-    return render_template("auth/account.html", title="My account", now=datetime.now(timezone.utc))
+    """Profile page + the customer's own orders (Feature 3)."""
+    from app.models import Order
+
+    orders = (
+        Order.query.filter_by(user_id=current_user.id)
+        .order_by(Order.created_at.desc())
+        .all()
+    )
+    return render_template(
+        "auth/account.html",
+        title="My account",
+        orders=orders,
+        now=datetime.now(timezone.utc),
+    )
 
 
 @login_manager.user_loader

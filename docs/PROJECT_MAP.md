@@ -3,7 +3,7 @@
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
 Har naya step aane par is file ko update karte raho.
 
-**Status updated:** Step 5 Feature 3 (Orders) ke baad — Step 5 complete.
+**Status updated:** Step 4 Feature 3 (Cart + Checkout COD) ke baad — Step 4 complete.
 
 ---
 
@@ -14,15 +14,15 @@ Har naya step aane par is file ko update karte raho.
 | Home | `/` | Hero banner, featured, categories, new arrivals, Why Veloura | 2 | **Done** |
 | Shop | `/shop` | Product grid, category/size/colour/price filters, sort, search, pagination (12/page) | 2+4 | **Done** (Feature 2 polish) |
 | Category Shop | `/shop/<slug>` | Ek category ke products (men, women, kids, accessories) | 2 | **Done** |
-| Product Detail | `/product/<id>` | Gallery (thumbs + zoom), size + colour selector, per-variant stock, WhatsApp order, related products | 3 | **Done** (Add to Cart abhi "Cart is coming soon" dikhata hai — real cart Step 4 me) |
+| Product Detail | `/product/<id>` | Gallery (thumbs + zoom), size + colour selector, per-variant stock, real Add to Cart, WhatsApp order, related products | 3 | **Done** (Add to Cart ab real cart me variant + quantity daalta hai) |
 | 404 | (koi bhi galat URL) | "Page not found" + Back to Shop button | 3 | **Done** |
 | Register | `/register` | Name, email, phone, password + confirm (CSRF, min 8 chars) | 4 | **Done** |
 | Login | `/login` | Email + password (generic error, rate limit 5/15 min per IP+email) | 4 | **Done** |
 | Logout | `/logout` | POST-only, CSRF protected | 4 | **Done** |
-| My Account | `/account` | Profile + "My orders" placeholder (real orders Feature 3 me) | 4 | **Done** |
-| Cart | `/cart` | Session cart, quantity update, shipping + total | 4 | Baaki |
-| Checkout | `/checkout` | Address form (COD only), CSRF + honeypot | 4 | Baaki |
-| Order Success | `/order/<id>` | COD order confirmation | 4 | Baaki |
+| My Account | `/account` | Profile + "My orders" (order number, date, items, total, status, thank-you link) | 4 | **Done** |
+| Cart | `/cart` | Session cart, quantity update, remove, subtotal/shipping/total, stock-problem blocks checkout | 4 | **Done** (Feature 3) |
+| Checkout | `/checkout` | COD address form, server validation (phone 10-digit, pincode 6-digit), CSRF + honeypot, double-submit token | 4 | **Done** (Feature 3) |
+| Order Success | `/order/<order_number>/thanks` | COD confirmation, items, WhatsApp button, sirf wahi session khole jo order place ki | 4 | **Done** (Feature 3) |
 | Admin Dashboard | `/admin` | Stats: products, categories, orders by status, sales, low stock, recent orders | 5 | **Done** (Feature 1) |
 | Admin Products | `/admin/products` | List (search/filter, 20/page), add/edit form + variants editor + Cloudinary/local images, soft/hard delete | 5 | **Done** (Feature 2) |
 | Admin Categories | `/admin/categories` | List + add/edit/delete (delete blocked jab tak products hain), auto unique slug | 5 | **Done** (Feature 2) |
@@ -32,7 +32,8 @@ Har naya step aane par is file ko update karte raho.
 **Feature 1 (Login) done.** **Feature 2 (Cloth list) done** — size + colour filter chips, pagination 12/page (filters URL me rehte hain), hover second image, out-of-stock badge, no N+1 (selectinload). Cart session-based hai (Feature 3 me asli cart).
 **Step 5 Feature 1 (Admin access + dashboard) done** — `is_admin` flag, `flask make-admin <email>` CLI, /admin dashboard (totals, orders by status, today's orders, total sales, low stock ≤3, recent 10 orders), sidebar layout (mobile drawer), navbar me sirf admin ko "Admin" link. Normal customer ko /admin par 403, anonymous ko /login redirect. Email validator me `.local` TLD support fix kiya (admin@veloura.local ab login kar sakta hai).
 **Step 5 Feature 2 (Categories + products) done** — categories add/edit/delete (products hon par delete blocked, auto unique slug), products list (search, category + stock filter, 20/page pagination), product form (slug auto, discount < price check), variants editor (add/remove rows, duplicate size+colour blocked, stock ≥ 0), images (Cloudinary ya local `app/static/uploads/` fallback, jpg/png/webp max 5 MB, set main / reorder / delete), soft delete (orders hain) vs hard delete (orders nahi), inactive products shop se gayab. Har admin form CSRF-protected.
-**Step 5 Feature 3 (Orders) done** — order list (search order no./name/phone, status filter, newest first, 10/page), detail (customer, address, snapshot items, subtotal/shipping/total, COD, status history with changed_by), status changes (New→Confirmed→Shipped→Delivered; Cancelled/Delivered frozen; backwards blocked), cancel = stock restored exactly once (`stock_restored` guard), private admin note (slip par kabhi nahi), WhatsApp customer button (wa.me + order no. + status), printable slip (`/admin/orders/<id>/slip`, clean print CSS), CSV export with current filters. Order model me naye columns: order_number (VLR-YYYYMMDD-XXXX), email, state, subtotal, shipping, payment_method, admin_note, stock_restored, user_id; OrderItem me snapshots (product_name, size, colour); nayi table `order_status_history`. Migration startup par automatically chalta hai (`_migrate_step5_orders`). Checkout (Step 4 Feature 3) abhi bhi pending hai — orders admin ready hai, checkout aate hi yehi order_number/status history use karega.
+**Step 5 Feature 3 (Orders) done** — order list (search order no./name/phone, status filter, newest first, 10/page), detail (customer, address, snapshot items, subtotal/shipping/total, COD, status history with changed_by), status changes (New→Confirmed→Shipped→Delivered; Cancelled/Delivered frozen; backwards blocked), cancel = stock restored exactly once (`stock_restored` guard), private admin note (slip par kabhi nahi), WhatsApp customer button (wa.me + order no. + status), printable slip (`/admin/orders/<id>/slip`, clean print CSS), CSV export with current filters. Order model me naye columns: order_number (VLR-YYYYMMDD-XXXX), email, state, subtotal, shipping, payment_method, admin_note, stock_restored, user_id; OrderItem me snapshots (product_name, size, colour); nayi table `order_status_history`. Migration startup par automatically chalta hai (`_migrate_step5_orders`).
+**Step 4 Feature 3 (Cart + Checkout COD) done** — session cart (guest + logged-in, `session["cart"]` = variant_id→qty, quantity stock tak capped, same variant do baar = qty badhti hai), /cart page (image, name, size/colour, unit price, update, remove, subtotal + shipping + total, empty state), navbar live cart-count badge, /checkout (COD only: full name, 10-digit Indian mobile, optional email, address/city/state, 6-digit pincode, notes; order summary; logged-in users par account se prefill), server-side validation + CSRF + honeypot + one-time checkout_token (double-submit se duplicate order nahi banta), order creation EK transaction me: variants `FOR UPDATE` lock, stock re-check, stock reduce, Order + snapshot OrderItems + "New" status-history row, rollback agar stock short. Shipping: `SHIPPING_FEE` (default 99) below `FREE_SHIPPING_ABOVE` (default 1999), dono .env me settable. /order/<order_number>/thanks sirf usi session se khulta hai jisne order kiya (403 otherwise), wa.me WhatsApp button `WHATSAPP_NUMBER` se. `flask list-orders` CLI (number, name, phone, total, status, items) + /account par "My orders". Naye orders automatically /admin/orders me dikhte hain aur wahan ke status changes + cancel-restores-stock ke saath kaam karte hain. Code: `app/cart.py` (session helpers), `app/routes/cart.py` (blueprint). Tests: `python tools/test_feature3.py` (52 checks).
 
 ---
 
@@ -126,9 +127,11 @@ Abhi rows: **52** (har product ki 2–3 photos, sab local, `app/static/img/produ
 
 Abhi rows: **62** — test ke liye: `mens-cotton-chinos` size **M** = 0 stock, poori `kids-graphic-tee` = **0 stock**
 
-### 6. cart — Step 4 ka session cart
+### 6. cart — session cart (database table unused)
 
-Abhi rows: **0** (Step 4 me bharegi)
+Cart session me rehta hai (`session["cart"]`, variant_id → quantity) — guests
+bina account ke cart use kar sakte hain. DB table `cart` banayi hui hai par
+istemaal nahi hoti (session-based cart ne DB rows ki zaroorat khatam kar di).
 
 ### 7. orders / 8. order_items / 9. order_status_history — COD orders
 
@@ -142,7 +145,7 @@ ka asli naam/size/colour — product badalne par order nahi badalta).
 order_status_history: har status change ki timeline (status, changed_by=admin
 email, created_at).
 
-Abhi rows: **0** (checkout Step 4 Feature 3 me aayega; admin panel ready hai)
+Abhi rows: **0** (test orders cleanup ke baad; checkout ready hai — `python tools/test_feature3.py` se ya browser se order place karke check karo)
 
 ---
 
@@ -154,6 +157,7 @@ Abhi rows: **0** (checkout Step 4 Feature 3 me aayega; admin panel ready hai)
 - **Step 5 Feature 1 tests:** `python tools/test_admin1.py` (29 checks — make-admin CLI, access control, dashboard numbers, sidebar).
 - **Step 5 Feature 2 tests:** `python tools/test_admin2.py` (44 checks — category CRUD rules, product form validation, variants, images, delete rules, filters, pagination).
 - **Step 5 Feature 3 tests:** `python tools/test_admin3.py` (65 checks — search/filters, status flow, cancel-restock-once, admin note privacy, WhatsApp link, printable slip, CSV export).
+- **Step 4 Feature 3 tests:** `python tools/test_feature3.py` (52 checks — cart add/update/remove/cap, checkout validation, CSRF, honeypot, double-submit, guest + logged-in orders, stock reduce/rollback, thank-you session lock, list-orders CLI, My orders, admin status change + cancel-restock).
 - **Photo uploads:** `CLOUDINARY_URL` set hai to Cloudinary; nahi hai to `app/static/uploads/` (git-ignored, README me clearly documented).
 - **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
   Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`

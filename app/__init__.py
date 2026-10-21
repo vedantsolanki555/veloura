@@ -91,6 +91,16 @@ def create_app():
     from app.routes.admin import admin_bp
     app.register_blueprint(admin_bp)
 
+    # Cart, checkout (COD) and orders — Step 4 Feature 3.
+    from app.routes.cart import cart_bp
+    app.register_blueprint(cart_bp)
+
+    # Navbar cart badge — available on every page.
+    @app.context_processor
+    def inject_cart_count():
+        from app.cart import cart_count
+        return {"cart_count": cart_count()}
+
     # Custom CLI commands (flask make-admin <email>).
     from app.cli import register_commands
     register_commands(app)

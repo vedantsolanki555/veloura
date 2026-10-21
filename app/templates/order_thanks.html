@@ -1,0 +1,46 @@
+{#- Thank-you page — order confirmation + WhatsApp button. Session-locked. -#}
+{% extends "base.html" %}
+
+{% block title %}Order {{ order.order_number }} confirmed — Veloura{% endblock %}
+{% block meta_description %}Thank you! Your Veloura order {{ order.order_number }} has been placed.{% endblock %}
+
+{% block content %}
+<section class="thanks-section container">
+    <div class="thanks-card">
+        <p class="thanks-check" aria-hidden="true">✓</p>
+        <h1>Thank you, {{ order.customer_name.split(' ')[0] }}!</h1>
+        <p class="thanks-sub">Your order <strong>{{ order.order_number }}</strong> has been placed.</p>
+        <p class="thanks-cod">Pay <strong>{{ order.total | inr }}</strong> in cash when your order is delivered.</p>
+
+        <div class="thanks-items">
+            {% for item in order.items %}
+            <div class="summary-item">
+                <span class="summary-item-name">
+                    {{ item.product_name }}
+                    <small>{{ item.colour }} / {{ item.size }} × {{ item.quantity }}</small>
+                </span>
+                <span>{{ (item.price * item.quantity) | inr }}</span>
+            </div>
+            {% endfor %}
+            <div class="summary-row">
+                <span>Subtotal</span><span>{{ order.subtotal | inr }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span>{% if order.shipping == 0 %}Free{% else %}{{ order.shipping | inr }}{% endif %}</span>
+            </div>
+            <div class="summary-row summary-total">
+                <span>Total</span><span>{{ order.total | inr }}</span>
+            </div>
+        </div>
+
+        {% if wa_link %}
+        <a href="{{ wa_link }}" target="_blank" rel="noopener" class="btn btn-primary thanks-wa">
+            Send order details on WhatsApp
+        </a>
+        {% endif %}
+
+        <a href="{{ url_for('main.shop') }}" class="btn btn-outline">Continue shopping</a>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,117 @@
+{#- Checkout page — COD only: delivery form + order summary. -#}
+{% extends "base.html" %}
+
+{% block title %}Checkout — Veloura{% endblock %}
+{% block meta_description %}Cash on delivery checkout at Veloura — enter your delivery details.{% endblock %}
+
+{% block content %}
+<section class="checkout-section container">
+    <h1 class="page-title">Checkout</h1>
+    <p class="checkout-sub">Cash on delivery — pay when your order arrives.</p>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <p class="flash flash-{{ category }}">{{ message }}</p>
+        {% endfor %}
+    {% endwith %}
+
+    <div class="checkout-layout">
+        <!-- Delivery details -->
+        <form method="post" class="checkout-form" id="checkout-form" novalidate>
+            {{ form.hidden_tag() }}
+            <input type="hidden" name="checkout_token" value="{{ checkout_token }}">
+
+            {# Honeypot — hidden from humans, bots love filling it in. #}
+            <div class="hp-field" aria-hidden="true">
+                <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+            </div>
+
+            <div class="form-field">
+                {{ form.name.label }}
+                {{ form.name(placeholder="Your full name", autocomplete="name") }}
+                {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    {{ form.phone.label }}
+                    {{ form.phone(placeholder="10-digit mobile", autocomplete="tel") }}
+                    {% for error in form.phone.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="form-field">
+                    {{ form.email.label }}
+                    {{ form.email(placeholder="you@example.com (optional)", autocomplete="email") }}
+                    {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+            </div>
+
+            <div class="form-field">
+                {{ form.address.label }}
+                {{ form.address(placeholder="House / street / landmark", rows=3) }}
+                {% for error in form.address.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            <div class="form-row">
+                <div class="form-field">
+                    {{ form.city.label }}
+                    {{ form.city(placeholder="City") }}
+                    {% for error in form.city.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="form-field">
+                    {{ form.state.label }}
+                    {{ form.state(placeholder="State") }}
+                    {% for error in form.state.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+                <div class="form-field">
+                    {{ form.pincode.label }}
+                    {{ form.pincode(placeholder="6-digit pincode", inputmode="numeric") }}
+                    {% for error in form.pincode.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+            </div>
+
+            <div class="form-field">
+                {{ form.notes.label }}
+                {{ form.notes(placeholder="Delivery notes (optional)", rows=2) }}
+                {% for error in form.notes.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+            </div>
+
+            {{ form.submit(class="btn btn-primary checkout-submit") }}
+        </form>
+
+        <!-- Order summary -->
+        <aside class="checkout-summary">
+            <h2>Your order</h2>
+            {% for line in lines %}
+            <div class="summary-item">
+                <span class="summary-item-name">
+                    {{ line.product.name }}
+                    <small>{{ line.variant.colour }} / {{ line.variant.size }} × {{ line.quantity }}</small>
+                </span>
+                <span>{{ line.line_total | inr }}</span>
+            </div>
+            {% endfor %}
+            <div class="summary-row">
+                <span>Subtotal</span>
+                <span>{{ subtotal | inr }}</span>
+            </div>
+            <div class="summary-row">
+                <span>Shipping</span>
+                <span>{% if shipping == 0 %}Free{% else %}{{ shipping | inr }}{% endif %}</span>
+            </div>
+            <div class="summary-row summary-total">
+                <span>Total</span>
+                <span>{{ total | inr }}</span>
+            </div>
+            <p class="summary-cod-note">Pay cash when your order is delivered.</p>
+        </aside>
+    </div>
+</section>
+
+<script>
+    // Prevent accidental double-submit: the button greys out once clicked.
+    document.getElementById("checkout-form").addEventListener("submit", function () {
+        var btn = this.querySelector(".checkout-submit");
+        if (btn) { btn.disabled = true; btn.value = "Placing order…"; }
+    });
+</script>
+{% endblock %}

@@ -903,6 +903,8 @@ h1, h2, h3, h4 {
     gap: 12px;
     margin-top: 8px;
 }
+/* The Add-to-Cart form is invisible; its button sits in .pd-actions like before. */
+.pd-add-form { display: contents; }
 .pd-actions .pd-cart-btn,
 .pd-actions .pd-wa-btn {
     flex: 1 1 200px;
@@ -1270,4 +1272,307 @@ h1, h2, h3, h4 {
 @media (max-width: 768px) {
     .account-grid { grid-template-columns: 1fr; }
     .auth-card { padding: 32px 24px; }
+}
+
+/* ============================================================
+   STEP 4 FEATURE 3 — CART, CHECKOUT, THANK-YOU
+   ============================================================ */
+
+/* Navbar cart badge */
+.nav-cart { position: relative; }
+.cart-badge {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+    text-align: center;
+}
+
+/* Shared page title */
+.page-title { font-size: 36px; margin-bottom: 24px; }
+
+/* Screen-reader-only text (labels etc.) */
+.sr-only {
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap; border: 0;
+}
+
+/* Honeypot field — visually hidden, bots still see the input */
+.hp-field {
+    position: absolute !important;
+    left: -9999px !important;
+    top: -9999px !important;
+    height: 0; width: 0;
+    overflow: hidden;
+}
+
+/* ---------- Cart page ---------- */
+.cart-section { padding: 56px 24px; max-width: 1000px; }
+
+.cart-empty {
+    text-align: center;
+    padding: 48px 0;
+    color: var(--text-soft);
+}
+.cart-empty p { margin-bottom: 20px; font-size: 18px; }
+
+.cart-form { margin-bottom: 32px; }
+
+.cart-lines {
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.cart-line {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 16px;
+    align-items: start;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+}
+.cart-line:last-child { border-bottom: none; }
+
+.cart-line-img img {
+    width: 80px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: var(--bg);
+}
+
+.cart-line-info { display: flex; flex-direction: column; gap: 4px; }
+.cart-line-name { font-weight: 500; font-size: 15px; }
+.cart-line-name:hover { color: var(--accent); }
+.cart-line-meta { font-size: 13px; color: var(--text-soft); }
+.cart-line-price { font-size: 13px; color: var(--text-soft); }
+
+.cart-line-problem {
+    font-size: 13px;
+    color: var(--sale);
+    font-weight: 500;
+}
+
+.cart-line-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 8px;
+}
+
+.cart-remove {
+    background: none;
+    border: none;
+    font-size: 13px;
+    color: var(--text-soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.cart-remove:hover { color: var(--sale); }
+
+.cart-line-total { font-weight: 500; font-size: 15px; white-space: nowrap; }
+
+.cart-update-btn { margin-top: 16px; }
+
+/* Summary card (cart + checkout) */
+.cart-summary, .checkout-summary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px;
+}
+.cart-summary h2, .checkout-summary h2 { font-size: 22px; margin-bottom: 18px; }
+
+.summary-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 15px;
+}
+.summary-total {
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+    padding-top: 14px;
+    font-weight: 500;
+    font-size: 17px;
+}
+.summary-note {
+    font-size: 13px;
+    color: var(--accent);
+    margin: 4px 0 8px;
+}
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 8px 0;
+    font-size: 14px;
+}
+.summary-item-name small { display: block; color: var(--text-soft); }
+
+.cart-block-note {
+    font-size: 14px;
+    color: var(--sale);
+    margin: 12px 0;
+}
+.cart-checkout-btn { display: block; text-align: center; margin-top: 12px; }
+.cart-summary .btn[disabled] { display: block; width: 100%; text-align: center; margin-top: 12px; opacity: 0.5; cursor: not-allowed; }
+.cart-continue {
+    display: block;
+    text-align: center;
+    margin-top: 16px;
+    font-size: 14px;
+    color: var(--text-soft);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.cart-continue:hover { color: var(--accent); }
+
+/* ---------- Checkout page ---------- */
+.checkout-section { padding: 56px 24px; max-width: 1000px; }
+.checkout-sub { color: var(--text-soft); margin: -12px 0 28px; }
+
+.checkout-layout {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 28px;
+    align-items: start;
+}
+
+.checkout-form {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 18px;
+}
+
+.checkout-submit { width: 100%; margin-top: 6px; }
+.checkout-submit:disabled { opacity: 0.6; cursor: wait; }
+
+.checkout-summary { position: sticky; top: 96px; }
+.summary-cod-note {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
+/* ---------- Thank-you page ---------- */
+.thanks-section { padding: 56px 24px; max-width: 640px; }
+
+.thanks-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 40px 32px;
+    text-align: center;
+}
+.thanks-card h1 { font-size: 32px; margin-bottom: 8px; }
+
+.thanks-check {
+    width: 56px; height: 56px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 28px;
+    line-height: 56px;
+}
+.thanks-sub { color: var(--text-soft); margin-bottom: 6px; }
+.thanks-cod { margin-bottom: 24px; }
+
+.thanks-items {
+    text-align: left;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 8px 20px 16px;
+    margin-bottom: 24px;
+}
+
+.thanks-wa { display: block; width: 100%; text-align: center; margin-bottom: 12px; }
+.thanks-card .btn-outline { display: block; width: 100%; text-align: center; }
+
+/* ---------- Account "My orders" list ---------- */
+.my-orders { list-style: none; display: flex; flex-direction: column; gap: 14px; }
+
+.my-order {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+}
+.my-order-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+.my-order-no { font-weight: 500; font-size: 14px; }
+.my-order-meta { font-size: 13px; color: var(--text-soft); margin-top: 4px; }
+.my-order-link {
+    display: inline-block;
+    margin-top: 8px;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+/* Small status chips (used on My orders) */
+.order-status {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+}
+.status-new { border-color: var(--accent); color: var(--accent); }
+.status-confirmed { border-color: #2f6fbe; color: #2f6fbe; }
+.status-shipped { border-color: #7a5cb8; color: #7a5cb8; }
+.status-delivered { border-color: #2e5c31; color: #2e5c31; }
+.status-cancelled { border-color: var(--sale); color: var(--sale); }
+
+/* ---------- Mobile ---------- */
+@media (max-width: 768px) {
+    .cart-line {
+        grid-template-columns: 70px 1fr;
+    }
+    .cart-line-total {
+        grid-column: 2;
+        text-align: right;
+    }
+    .checkout-layout { grid-template-columns: 1fr; }
+    .checkout-summary { position: static; }
+    .page-title { font-size: 30px; }
 }

@@ -80,7 +80,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const qtyMinus = document.getElementById("qty-minus");
     const qtyPlus = document.getElementById("qty-plus");
     const addBtn = document.getElementById("add-to-cart-btn");
-    const cartMsg = document.getElementById("cart-msg");
+    const addForm = document.getElementById("add-to-cart-form");
+    const cartVariantId = document.getElementById("cart-variant-id");
+    const cartQty = document.getElementById("cart-qty");
     const waBtn = document.getElementById("whatsapp-btn");
 
     if (layout && sizeOptions && colourOptions && qtyInput) {
@@ -210,6 +212,10 @@ document.addEventListener("DOMContentLoaded", () => {
             const ready = Boolean(variant && variant.stock > 0);
             if (addBtn) addBtn.disabled = !ready;
             if (waBtn) waBtn.disabled = !ready || !waNumber;
+
+            // Keep the hidden Add-to-Cart fields in sync with the selection.
+            if (cartVariantId) cartVariantId.value = ready ? String(variant.id) : "";
+            if (cartQty) cartQty.value = qtyInput.value || "1";
         };
 
         sizeOptions.addEventListener("click", (event) => {
@@ -226,12 +232,16 @@ document.addEventListener("DOMContentLoaded", () => {
             update();
         });
 
-        // --- Add to Cart: real cart arrives in Step 4 ---
-        if (addBtn && cartMsg) {
-            addBtn.addEventListener("click", () => {
-                if (addBtn.disabled) return;
-                cartMsg.textContent = "Cart is coming soon";
-                cartMsg.hidden = false;
+        // --- Add to Cart: the hidden fields are synced in update();
+        //     this guard only blocks submits with no variant selected.
+        //     (The button is type=submit — the browser posts the form.) ---
+        if (addBtn && addForm) {
+            addForm.addEventListener("submit", (event) => {
+                if (cartVariantId && cartVariantId.value === "") {
+                    event.preventDefault();
+                    return;
+                }
+                if (cartQty) cartQty.value = qtyInput.value || "1";
             });
         }
 

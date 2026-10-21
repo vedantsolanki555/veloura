@@ -3,7 +3,7 @@ Flask CLI commands — run with `flask <command>`.
 
 Commands:
     make-admin <email>   Promote an existing registered user to admin.
-    list-orders          (Step 4) List all orders — placeholder until orders exist.
+    list-orders          List every COD order (newest first).
 """
 
 import click
@@ -45,6 +45,31 @@ def make_admin(email):
     click.echo(f"Done — {user.email} is now an admin. Log in at /login, then open /admin.")
 
 
+@click.command("list-orders")
+@with_appcontext
+def list_orders():
+    """List all COD orders (newest first): number, name, phone, total, status, items."""
+    from app.models import Order
+
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+
+    if not orders:
+        click.echo("No orders yet.")
+        return
+
+    for order in orders:
+        items = ", ".join(
+            f"{item.quantity}x {item.product_name} ({item.size}/{item.colour})"
+            for item in order.items
+        ) or "(no items)"
+        click.echo(
+            f"{order.order_number} | {order.customer_name} | {order.phone} | "
+            f"₹{order.total} | {order.status} | {items}"
+        )
+    click.echo(f"\n{len(orders)} order(s) total.")
+
+
 def register_commands(app):
     """Attach our custom commands to the Flask app."""
     app.cli.add_command(make_admin)
+    app.cli.add_command(list_orders)

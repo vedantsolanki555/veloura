@@ -44,13 +44,34 @@
             </form>
         </div>
 
-        <!-- Orders card (placeholder until Feature 3 fills real orders) -->
+        <!-- Orders card — real orders from Feature 3 -->
         <div class="account-card">
             <h2>My orders</h2>
-            <div class="orders-empty">
-                <p>You haven't placed any orders yet.</p>
-                <a href="{{ url_for('main.shop') }}" class="btn btn-primary">Start shopping</a>
-            </div>
+            {% if orders %}
+                <ul class="my-orders">
+                    {% for order in orders %}
+                    <li class="my-order">
+                        <div class="my-order-top">
+                            <span class="my-order-no">{{ order.order_number }}</span>
+                            <span class="order-status status-{{ order.status|lower }}">{{ order.status }}</span>
+                        </div>
+                        <p class="my-order-meta">
+                            {{ order.created_at.strftime("%d %b %Y") }} ·
+                            {{ order.items_count }} item{{ "s" if order.items_count != 1 }} ·
+                            {{ order.total | inr }} · {{ order.payment_method }}
+                        </p>
+                        {% if order.order_number in (session.get("placed_orders") or []) %}
+                            <a class="my-order-link" href="{{ url_for('cart.thanks', order_number=order.order_number) }}">View details</a>
+                        {% endif %}
+                    </li>
+                    {% endfor %}
+                </ul>
+            {% else %}
+                <div class="orders-empty">
+                    <p>You haven't placed any orders yet.</p>
+                    <a href="{{ url_for('main.shop') }}" class="btn btn-primary">Start shopping</a>
+                </div>
+            {% endif %}
         </div>
     </div>
 </section>
