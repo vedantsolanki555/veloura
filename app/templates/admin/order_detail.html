@@ -1,0 +1,163 @@
+{#- Admin order detail — customer, items, money, status history, actions.
+    Yahan ka admin note PRIVATE hai: customer-facing pages par kabhi nahi dikhta.
+-#}
+{% extends "admin/base.html" %}
+
+{% block title %}Order {{ order.order_number }} — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head admin-page-head-row">
+    <div>
+        <h1>{{ order.order_number }}</h1>
+        <p class="admin-page-sub">
+            {{ order.created_at.strftime("%d %b %Y, %H:%M UTC") if order.created_at else "" }}
+            &nbsp;
+            <span class="status-badge status-{{ order.status | lower }}">{{ order.status }}</span>
+        </p>
+    </div>
+    <div class="admin-order-actions">
+        {% if whatsapp_url %}
+        <a href="{{ whatsapp_url }}" target="_blank" rel="noopener"
+           class="btn btn-outline btn-small">WhatsApp customer</a>
+        {% endif %}
+        <a href="{{ url_for('admin.order_slip', order_id=order.id) }}"
+           target="_blank" rel="noopener" class="btn btn-outline btn-small">Print slip</a>
+        <a href="{{ url_for('admin.orders') }}" class="btn-mini">← All orders</a>
+    </div>
+</div>
+
+<div class="admin-two-col">
+
+    {# ---- Customer + address ---- #}
+    <section class="admin-card">
+        <h2>Customer</h2>
+        <p><strong>{{ order.customer_name }}</strong></p>
+        <p>{{ order.phone }}{% if order.email %} · {{ order.email }}{% endif %}</p>
+        <p class="admin-address">
+            {{ order.address }}<br>
+            {{ order.city }}{% if order.state %}, {{ order.state }}{% endif %}
+            — {{ order.pincode }}
+        </p>
+        {% if order.notes %}
+        <p class="admin-hint">Delivery notes: {{ order.notes }}</p>
+        {% endif %}
+    </section>
+
+    {# ---- Status history ---- #}
+    <section class="admin-card">
+        <h2>Status history</h2>
+        {% if order.status_history %}
+        <ul class="admin-timeline">
+            {% for entry in order.status_history %}
+            <li>
+                <span class="status-badge status-{{ entry.status | lower }}">{{ entry.status }}</span>
+                <span class="admin-timeline-meta">
+                    {{ entry.created_at.strftime("%d %b %Y, %H:%M") if entry.created_at else "" }}
+                    — {{ entry.changed_by }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p class="admin-empty">No history yet.</p>
+        {% endif %}
+    </section>
+</div>
+
+{# ---- Items + totals ---- #}
+<section class="admin-card">
+    <h2>Items</h2>
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Size</th>
+                    <th>Colour</th>
+                    <th>Price</th>
+                    <th>Qty</th>
+                    <th>Line total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items %}
+                {# Snapshot first; fall back to live product data if the row is old. #}
+                {% set name = item.product_name or (item.product.name if item.product else "—") %}
+                {% set size = item.size or (item.variant.size if item.variant else "—") %}
+                {% set colour = item.colour or (item.variant.colour if item.variant else "—") %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ size }}</td>
+                    <td>{{ colour }}</td>
+                    <td>{{ item.price | inr }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ (item.price * item.quantity) | inr }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="admin-totals">
+        <p>Subtotal: <strong>{{ order.subtotal | inr }}</strong></p>
+        <p>Shipping: <strong>{{ order.shipping | inr }}</strong></p>
+        <p>Total: <strong>{{ order.total | inr }}</strong></p>
+        <p>Payment: <strong>{{ order.payment_method }}</strong> (cash on delivery)</p>
+    </div>
+</section>
+
+{# ---- Change status ---- #}
+<section class="admin-card">
+    <h2>Change status</h2>
+    {% if allowed_statuses %}
+    <p class="admin-hint">
+        Current: <strong>{{ order.status }}</strong> — choose the new status:
+    </p>
+    <div class="admin-status-buttons">
+        {% for status in allowed_statuses %}
+        <form method="post" action="{{ url_for('admin.order_status', order_id=order.id) }}"
+              class="admin-inline admin-status-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="status" value="{{ status }}">
+            <button type="submit"
+                    class="btn-mini {{ 'btn-mini-danger' if status == 'Cancelled' }}"
+                    {{ 'data-confirm="Cancel this order? Item quantities go back into stock."' if status == 'Cancelled' }}>
+                Mark {{ status }}
+            </button>
+        </form>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="admin-empty">
+        This order is <strong>{{ order.status }}</strong> — no further status
+        changes are possible.
+    </p>
+    {% endif %}
+</section>
+
+{# ---- Internal note (private) ---- #}
+<section class="admin-card">
+    <h2>Internal note <small class="admin-hint">(private — never shown to the customer)</small></h2>
+    <form method="post" action="{{ url_for('admin.order_note', order_id=order.id) }}" class="admin-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-field">
+            <textarea name="admin_note" rows="3"
+                      placeholder="e.g. Customer asked to hold till Friday…">{{ order.admin_note or "" }}</textarea>
+        </div>
+        <button type="submit" class="btn btn-outline btn-small">Save note</button>
+    </form>
+</section>
+{% endblock %}
+
+{% block admin_scripts %}
+<script>
+// Confirm dialog before the Cancel button submits.
+document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+    form.addEventListener("submit", function (event) {
+        if (!window.confirm(form.getAttribute("data-confirm"))) {
+            event.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %}

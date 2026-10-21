@@ -1,0 +1,107 @@
+{#- Admin orders — search, status filter, newest first, pagination, CSV export. -#}
+{% extends "admin/base.html" %}
+
+{% block title %}Orders — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head admin-page-head-row">
+    <div>
+        <h1>Orders</h1>
+        <p class="admin-page-sub">{{ pagination.total }} order(s)</p>
+    </div>
+    {# Export keeps whatever filters are active right now. #}
+    <a href="{{ url_for('admin.orders_export', q=search, status=status_filter) }}"
+       class="btn btn-outline">Download orders CSV</a>
+</div>
+
+{# ---- Filters ---- #}
+<section class="admin-card">
+    <form method="get" class="admin-filter-bar">
+        <input type="search" name="q"
+               placeholder="Search order no., name or phone…"
+               value="{{ search }}" aria-label="Search orders">
+
+        <select name="status" aria-label="Filter by status">
+            <option value="">All statuses</option>
+            {% for s in ["New", "Confirmed", "Shipped", "Delivered", "Cancelled"] %}
+            <option value="{{ s }}" {{ 'selected' if status_filter == s }}>{{ s }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="btn btn-outline btn-small">Filter</button>
+        {% if search or status_filter %}
+        <a href="{{ url_for('admin.orders') }}" class="btn-mini">Clear</a>
+        {% endif %}
+    </form>
+</section>
+
+{# ---- Orders table ---- #}
+<section class="admin-card">
+    {% if orders %}
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Order</th>
+                    <th>Date</th>
+                    <th>Customer</th>
+                    <th>Phone</th>
+                    <th>Total</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td>
+                        <a href="{{ url_for('admin.order_detail', order_id=order.id) }}"
+                           class="admin-product-name">
+                            {{ order.order_number }}
+                        </a>
+                    </td>
+                    <td>{{ order.created_at.strftime("%d %b %Y, %H:%M") if order.created_at else "—" }}</td>
+                    <td>{{ order.customer_name }}</td>
+                    <td>{{ order.phone }}</td>
+                    <td>{{ order.total | inr }}</td>
+                    <td>
+                        <span class="status-badge status-{{ order.status | lower }}">
+                            {{ order.status }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{{ url_for('admin.order_detail', order_id=order.id) }}"
+                           class="btn-mini">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {# ---- Pagination ---- #}
+    {% if pagination.pages > 1 %}
+    <nav class="admin-pagination" aria-label="Order pages">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.orders', page=pagination.prev_num, q=search, status=status_filter) }}"
+           class="btn-mini">← Prev</a>
+        {% endif %}
+        <span class="admin-page-info">Page {{ pagination.page }} / {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.orders', page=pagination.next_num, q=search, status=status_filter) }}"
+           class="btn-mini">Next →</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <p class="admin-empty">
+        {% if search or status_filter %}
+        Koi order match nahi hua — filters hata kar dekho.
+        {% else %}
+        Abhi tak koi order nahi aaya.
+        {% endif %}
+    </p>
+    {% endif %}
+</section>
+{% endblock %}

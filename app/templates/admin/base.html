@@ -49,7 +49,7 @@
                    class="admin-nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.categories') }}">
                     Categories
                 </a>
-                <a href="/admin/orders"
+                <a href="{{ url_for('admin.orders') }}"
                    class="admin-nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.orders') }}">
                     Orders
                 </a>

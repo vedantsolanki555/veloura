@@ -458,6 +458,7 @@ with app.app_context():
     # Attach a fake order item to alpha.
     alpha = Product.query.filter_by(slug="test-product-alpha").first()
     order = Order(
+        order_number="VLR-TEST-%04d" % alpha.id,
         customer_name="Test Customer",
         phone="9876543210",
         address="1 Test Street",

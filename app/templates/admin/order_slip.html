@@ -1,0 +1,218 @@
+{#- Printable order slip — standalone page (no admin sidebar) with clean print CSS.
+    Internal admin notes are deliberately NOT included on the slip.
+-#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Order {{ order.order_number }} — Veloura</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Simple, print-friendly layout — black on white, no clutter. */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: "Jost", -apple-system, "Segoe UI", sans-serif;
+            color: #1a1a1a;
+            background: #faf8f5;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .slip {
+            max-width: 720px;
+            margin: 32px auto;
+            background: #fff;
+            border: 1px solid #e8e2da;
+            padding: 40px;
+        }
+
+        .slip-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #1a1a1a;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+
+        .slip-logo {
+            font-family: "Cormorant Garamond", Georgia, serif;
+            font-size: 28px;
+            font-weight: 600;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+        }
+
+        .slip-title { text-align: right; }
+        .slip-title h1 { font-size: 18px; font-family: "Jost", sans-serif; font-weight: 500; }
+        .slip-title p { color: #6b6560; font-size: 13px; }
+
+        .slip-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 28px;
+        }
+
+        .slip-block h2 {
+            font-family: "Jost", sans-serif;
+            font-size: 11px;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #6b6560;
+            margin-bottom: 6px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th {
+            text-align: left;
+            font-size: 11px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: #6b6560;
+            font-weight: 500;
+            border-bottom: 1px solid #1a1a1a;
+            padding: 8px 6px;
+        }
+
+        td {
+            padding: 8px 6px;
+            border-bottom: 1px solid #e8e2da;
+        }
+
+        .totals {
+            width: 260px;
+            margin-left: auto;
+        }
+
+        .totals p {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 6px;
+        }
+
+        .totals .grand {
+            border-top: 2px solid #1a1a1a;
+            margin-top: 6px;
+            padding-top: 8px;
+            font-weight: 500;
+            font-size: 16px;
+        }
+
+        .slip-footer {
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid #e8e2da;
+            color: #6b6560;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .print-btn {
+            display: block;
+            max-width: 720px;
+            margin: 16px auto 0;
+            padding: 10px 28px;
+            font-family: "Jost", sans-serif;
+            font-size: 13px;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            background: #1a1a1a;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+
+        /* On paper: hide the button, drop the grey background. */
+        @media print {
+            body { background: #fff; }
+            .slip { border: none; margin: 0; padding: 0; max-width: none; }
+            .print-btn { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">Print this slip</button>
+
+    <div class="slip">
+        <div class="slip-header">
+            <div class="slip-logo">Veloura</div>
+            <div class="slip-title">
+                <h1>Order Slip</h1>
+                <p>{{ order.order_number }}</p>
+                <p>{{ order.created_at.strftime("%d %b %Y, %H:%M") if order.created_at else "" }}</p>
+                <p>Status: {{ order.status }}</p>
+            </div>
+        </div>
+
+        <div class="slip-grid">
+            <div class="slip-block">
+                <h2>Ship to</h2>
+                <p><strong>{{ order.customer_name }}</strong></p>
+                <p>{{ order.phone }}{% if order.email %} · {{ order.email }}{% endif %}</p>
+                <p>
+                    {{ order.address }}<br>
+                    {{ order.city }}{% if order.state %}, {{ order.state }}{% endif %}
+                    — {{ order.pincode }}
+                </p>
+            </div>
+            <div class="slip-block">
+                <h2>Payment</h2>
+                <p>Method: <strong>{{ order.payment_method }}</strong> (cash on delivery)</p>
+                {% if order.notes %}
+                <h2 style="margin-top: 12px;">Delivery notes</h2>
+                <p>{{ order.notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Size</th>
+                    <th>Colour</th>
+                    <th style="text-align:right;">Price</th>
+                    <th style="text-align:right;">Qty</th>
+                    <th style="text-align:right;">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order.items %}
+                {% set name = item.product_name or (item.product.name if item.product else "—") %}
+                {% set size = item.size or (item.variant.size if item.variant else "—") %}
+                {% set colour = item.colour or (item.variant.colour if item.variant else "—") %}
+                <tr>
+                    <td>{{ name }}</td>
+                    <td>{{ size }}</td>
+                    <td>{{ colour }}</td>
+                    <td style="text-align:right;">{{ item.price | inr }}</td>
+                    <td style="text-align:right;">{{ item.quantity }}</td>
+                    <td style="text-align:right;">{{ (item.price * item.quantity) | inr }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div class="totals">
+            <p><span>Subtotal</span><span>{{ order.subtotal | inr }}</span></p>
+            <p><span>Shipping</span><span>{{ order.shipping | inr }}</span></p>
+            <p class="grand"><span>Total</span><span>{{ order.total | inr }}</span></p>
+        </div>
+
+        <div class="slip-footer">
+            Veloura — premium clothing, thoughtfully crafted. Thank you for your order!
+        </div>
+    </div>
+</body>
+</html>

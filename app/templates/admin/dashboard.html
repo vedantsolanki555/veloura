@@ -86,7 +86,12 @@
                 <tbody>
                     {% for order in recent_orders %}
                     <tr>
-                        <td>{{ order.id }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.order_detail', order_id=order.id) }}"
+                               class="admin-product-name">
+                                {{ order.order_number or order.id }}
+                            </a>
+                        </td>
                         <td>{{ order.customer_name }}</td>
                         <td>{{ order.total | inr }}</td>
                         <td><span class="status-badge status-{{ order.status | lower }}">{{ order.status }}</span></td>

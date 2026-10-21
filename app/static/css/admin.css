@@ -574,6 +574,58 @@
     font-family: var(--font-body);
 }
 
+/* ---------- 14. Orders pages ---------- */
+.admin-order-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.admin-address { margin-top: 8px; white-space: pre-line; }
+
+.admin-totals {
+    margin-top: 16px;
+    margin-left: auto;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 14px;
+}
+
+.admin-totals p {
+    display: flex;
+    justify-content: space-between;
+    gap: 24px;
+}
+
+.admin-status-buttons {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.admin-timeline {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.admin-timeline li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.admin-timeline-meta {
+    font-size: 13px;
+    color: var(--text-soft);
+}
+
 /* ---------- 99. Responsive: sidebar becomes a drawer ---------- */
 @media (max-width: 860px) {
     .admin-mobile-bar { display: flex; }

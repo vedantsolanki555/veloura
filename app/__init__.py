@@ -112,6 +112,7 @@ def create_app():
         db.create_all()
         _migrate_user_columns()
         _migrate_step5_columns()
+        _migrate_step5_orders()
 
     return app
 
@@ -158,4 +159,92 @@ def _migrate_step5_columns():
             "ALTER TABLE product_images ADD COLUMN public_id VARCHAR(300)"
         ))
 
+    db.session.commit()
+
+
+def _migrate_step5_orders():
+    """Add Step 5 Feature 3 (orders admin) columns to an existing database.
+
+    orders:      order_number, email, state, subtotal, shipping,
+                 payment_method, admin_note, stock_restored, user_id
+    order_items: product_name, size, colour (snapshots)
+    order_status_history: brand-new table (db.create_all handles it)
+
+    Also: old rows created before this step have status 'pending' — they are
+    renamed to 'New' so the admin status filter sees them. Safe to re-run.
+    """
+    from sqlalchemy import inspect
+
+    inspector = inspect(db.engine)
+
+    # ---- orders ----
+    order_cols = {c["name"] for c in inspector.get_columns("orders")}
+
+    # NOT NULL column additions need a default value; existing rows (there
+    # are none yet in a fresh store) are backfilled right after.
+    if "order_number" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN order_number VARCHAR(20) "
+            "NOT NULL DEFAULT ''"
+        ))
+    if "email" not in order_cols:
+        db.session.execute(db.text("ALTER TABLE orders ADD COLUMN email VARCHAR(120)"))
+    if "state" not in order_cols:
+        db.session.execute(db.text("ALTER TABLE orders ADD COLUMN state VARCHAR(80)"))
+    if "subtotal" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN subtotal NUMERIC(10,2) NOT NULL DEFAULT 0"
+        ))
+    if "shipping" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN shipping NUMERIC(10,2) NOT NULL DEFAULT 0"
+        ))
+    if "payment_method" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN payment_method VARCHAR(20) "
+            "NOT NULL DEFAULT 'COD'"
+        ))
+    if "admin_note" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN admin_note TEXT NOT NULL DEFAULT ''"
+        ))
+    if "stock_restored" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN stock_restored BOOLEAN NOT NULL DEFAULT FALSE"
+        ))
+    if "user_id" not in order_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE orders ADD COLUMN user_id INTEGER REFERENCES users(id)"
+        ))
+
+    # ---- order_items ----
+    item_cols = {c["name"] for c in inspector.get_columns("order_items")}
+    if "product_name" not in item_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE order_items ADD COLUMN product_name VARCHAR(200) "
+            "NOT NULL DEFAULT ''"
+        ))
+    if "size" not in item_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE order_items ADD COLUMN size VARCHAR(20) NOT NULL DEFAULT ''"
+        ))
+    if "colour" not in item_cols:
+        db.session.execute(db.text(
+            "ALTER TABLE order_items ADD COLUMN colour VARCHAR(50) NOT NULL DEFAULT ''"
+        ))
+
+    # Old default status was 'pending' — normalise to the new 'New'.
+    db.session.execute(db.text(
+        "UPDATE orders SET status = 'New' WHERE status = 'pending'"
+    ))
+
+    db.session.commit()
+
+    # Backfill order numbers for any legacy row still showing ''.
+    from app.models import Order, generate_order_number
+
+    for order in Order.query.filter(
+        (Order.order_number == "") | (Order.order_number.is_(None))
+    ).all():
+        order.order_number = generate_order_number()
     db.session.commit()

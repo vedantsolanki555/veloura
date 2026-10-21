@@ -22,11 +22,14 @@ Routes:
     /admin/images/<id>/move     Move one image left/right in the gallery
 """
 
+import csv
+import io
 import json
+import os
 from datetime import datetime, timezone
 from functools import wraps
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 from flask_wtf import FlaskForm
 from sqlalchemy import func
@@ -34,7 +37,15 @@ from wtforms import DecimalField, BooleanField, SelectField, StringField, Submit
 from wtforms.validators import DataRequired, Length, NumberRange, Optional, ValidationError
 
 from app import db
-from app.models import Category, Order, OrderItem, Product, ProductImage, ProductVariant
+from app.models import (
+    Category,
+    Order,
+    OrderItem,
+    OrderStatusHistory,
+    Product,
+    ProductImage,
+    ProductVariant,
+)
 from app.utils import (
     delete_product_image_file,
     save_product_image,
@@ -707,3 +718,223 @@ def _renumber_images(product_id):
     )
     for i, image in enumerate(images):
         image.position = i
+
+
+# ============================================================
+# ORDERS
+# ============================================================
+
+# Status flow: New -> Confirmed -> Shipped -> Delivered.
+# Cancelled and Delivered are frozen — once reached, nothing changes again.
+STATUS_RANK = {"New": 0, "Confirmed": 1, "Shipped": 2, "Delivered": 3}
+FROZEN_STATUSES = ("Cancelled", "Delivered")
+ORDERS_PER_PAGE = 10
+
+
+def _filtered_orders_query():
+    """Orders query shared by the list page and the CSV export.
+
+    Reads (all optional): q = order number / customer name / phone search,
+    status = exact status filter.
+    Always newest first.
+    """
+    query = Order.query
+
+    search = request.args.get("q", "").strip()
+    if search:
+        pattern = f"%{search}%"
+        query = query.filter(db.or_(
+            Order.order_number.ilike(pattern),
+            Order.customer_name.ilike(pattern),
+            Order.phone.ilike(pattern),
+        ))
+
+    status = request.args.get("status", "").strip()
+    if status in ORDER_STATUSES:
+        query = query.filter(Order.status == status)
+
+    return query.order_by(Order.created_at.desc(), Order.id.desc())
+
+
+def _allowed_next_statuses(current_status):
+    """Which statuses this order may move to right now (empty = frozen)."""
+    if current_status in FROZEN_STATUSES:
+        return []
+    current_rank = STATUS_RANK.get(current_status, -1)
+    # Forward moves only, plus Cancelled (allowed until Delivered).
+    forward = [s for s, rank in STATUS_RANK.items() if rank > current_rank]
+    return forward + ["Cancelled"]
+
+
+def _customer_whatsapp_url(order):
+    """wa.me link to the customer's phone with a prefilled status update.
+
+    The stored phone is usually a 10-digit national number while wa.me needs
+    the full international format — if our own WHATSAPP_NUMBER carries a
+    country code we borrow that prefix for the customer's number too.
+    """
+    digits = "".join(ch for ch in (order.phone or "") if ch.isdigit())
+    if not digits:
+        return None
+
+    own = "".join(ch for ch in os.environ.get("WHATSAPP_NUMBER", "") if ch.isdigit())
+    if own and len(digits) <= 11 and len(own) > len(digits):
+        country_code = own[: len(own) - len(digits)]
+        digits = country_code + digits
+
+    message = (
+        f"Hi {order.customer_name.split()[0]}, an update on your Veloura "
+        f"order {order.order_number} — current status: {order.status}. "
+        "Thank you for shopping with us!"
+    )
+    from urllib.parse import quote
+    return f"https://wa.me/{digits}?text={quote(message)}"
+
+
+@admin_bp.route("/orders")
+@admin_required
+def orders():
+    """Orders list: search, status filter, newest first, 10 per page."""
+    page = request.args.get("page", 1, type=int) or 1
+    query = _filtered_orders_query()
+    pagination = query.paginate(page=page, per_page=ORDERS_PER_PAGE, error_out=False)
+
+    return render_template(
+        "admin/orders.html",
+        title="Admin — Orders",
+        pagination=pagination,
+        orders=pagination.items,
+        search=request.args.get("q", "").strip(),
+        status_filter=request.args.get("status", "").strip(),
+    )
+
+
+@admin_bp.route("/orders/export")
+@admin_required
+def orders_export():
+    """Download the filtered order list as a CSV file (current filters apply)."""
+    rows = _filtered_orders_query().all()
+
+    # utf-8-sig adds a BOM so Excel opens Hindi/special characters correctly.
+    buffer = io.StringIO()
+    writer = csv.writer(buffer)
+    writer.writerow([
+        "Order number", "Date", "Customer", "Phone", "Email",
+        "Address", "City", "State", "Pincode",
+        "Items", "Subtotal", "Shipping", "Total",
+        "Payment method", "Status",
+    ])
+    for order in rows:
+        # One readable line per item, e.g. "Kurta (M / Indigo) x2; Dupatta (Free) x1"
+        item_parts = []
+        for item in order.items:
+            name = item.product_name or (
+                item.product.name if item.product else "?"
+            )
+            size = item.size or (item.variant.size if item.variant else "")
+            colour = item.colour or (item.variant.colour if item.variant else "")
+            variant_bits = " / ".join(bit for bit in (size, colour) if bit)
+            label = f"{name} ({variant_bits})" if variant_bits else name
+            item_parts.append(f"{label} x{item.quantity}")
+        writer.writerow([
+            order.order_number,
+            order.created_at.strftime("%Y-%m-%d %H:%M") if order.created_at else "",
+            order.customer_name,
+            order.phone,
+            order.email or "",
+            order.address.replace("\n", " "),
+            order.city,
+            order.state or "",
+            order.pincode,
+            "; ".join(item_parts),
+            f"{order.subtotal:.2f}",
+            f"{order.shipping:.2f}",
+            f"{order.total:.2f}",
+            order.payment_method,
+            order.status,
+        ])
+
+    response = Response(buffer.getvalue(), mimetype="text/csv")
+    response.headers["Content-Disposition"] = (
+        "attachment; filename=veloura-orders.csv"
+    )
+    return response
+
+
+@admin_bp.route("/orders/<int:order_id>")
+@admin_required
+def order_detail(order_id):
+    """Full order view: customer, items, money, history, actions."""
+    order = db.session.get(Order, order_id) or abort(404)
+    return render_template(
+        "admin/order_detail.html",
+        title=f"Admin — Order {order.order_number}",
+        order=order,
+        allowed_statuses=_allowed_next_statuses(order.status),
+        whatsapp_url=_customer_whatsapp_url(order),
+    )
+
+
+@admin_bp.route("/orders/<int:order_id>/status", methods=["POST"])
+@admin_required
+def order_status(order_id):
+    """Change an order's status, with the safety rules from STEP5:
+
+    - Cancelled / Delivered orders are frozen (no further changes).
+    - No going back to an earlier status.
+    - Cancelling puts item quantities back into stock — exactly once.
+    """
+    order = db.session.get(Order, order_id) or abort(404)
+    new_status = request.form.get("status", "").strip()
+
+    if new_status not in ORDER_STATUSES:
+        flash("Unknown status.", "error")
+        return redirect(url_for("admin.order_detail", order_id=order.id))
+
+    if order.status in FROZEN_STATUSES:
+        flash(f"A {order.status} order cannot be changed.", "error")
+        return redirect(url_for("admin.order_detail", order_id=order.id))
+
+    if new_status == order.status:
+        flash(f"Order is already {new_status}.", "info")
+        return redirect(url_for("admin.order_detail", order_id=order.id))
+
+    # Forward-only (Cancelled is handled by its own rule below).
+    if new_status != "Cancelled":
+        current_rank = STATUS_RANK.get(order.status, -1)
+        if STATUS_RANK.get(new_status, -1) <= current_rank:
+            flash(f"Cannot move a {order.status} order back to {new_status}.", "error")
+            return redirect(url_for("admin.order_detail", order_id=order.id))
+
+    # Cancellation returns stock — restore_stock() itself refuses to run twice.
+    if new_status == "Cancelled":
+        order.restore_stock()
+
+    order.status = new_status
+    db.session.add(OrderStatusHistory(
+        order=order,
+        status=new_status,
+        changed_by=current_user.email or "admin",
+    ))
+    db.session.commit()
+    flash(f"Order {order.order_number} is now {new_status}.", "success")
+    return redirect(url_for("admin.order_detail", order_id=order.id))
+
+
+@admin_bp.route("/orders/<int:order_id>/note", methods=["POST"])
+@admin_required
+def order_note(order_id):
+    """Save the private admin note. Only ever rendered inside /admin."""
+    order = db.session.get(Order, order_id) or abort(404)
+    order.admin_note = request.form.get("admin_note", "").strip()
+    db.session.commit()
+    flash("Internal note saved.", "success")
+    return redirect(url_for("admin.order_detail", order_id=order.id))
+
+
+@admin_bp.route("/orders/<int:order_id>/slip")
+@admin_required
+def order_slip(order_id):
+    """Printable order slip (packing slip) with clean print CSS."""
+    order = db.session.get(Order, order_id) or abort(404)
+    return render_template("admin/order_slip.html", order=order)

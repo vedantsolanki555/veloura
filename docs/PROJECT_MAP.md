@@ -3,7 +3,7 @@
 Is file me project ka pura naksha hai: kaunsi pages hain, kaunsi database tables hain.
 Har naya step aane par is file ko update karte raho.
 
-**Status updated:** Step 5 Feature 2 (Categories + Products) ke baad.
+**Status updated:** Step 5 Feature 3 (Orders) ke baad — Step 5 complete.
 
 ---
 
@@ -26,12 +26,13 @@ Har naya step aane par is file ko update karte raho.
 | Admin Dashboard | `/admin` | Stats: products, categories, orders by status, sales, low stock, recent orders | 5 | **Done** (Feature 1) |
 | Admin Products | `/admin/products` | List (search/filter, 20/page), add/edit form + variants editor + Cloudinary/local images, soft/hard delete | 5 | **Done** (Feature 2) |
 | Admin Categories | `/admin/categories` | List + add/edit/delete (delete blocked jab tak products hain), auto unique slug | 5 | **Done** (Feature 2) |
-| Admin Orders | `/admin/orders` | Orders dekhna + status update karna | 5 | Baaki |
+| Admin Orders | `/admin/orders` | List (search/filter/pagination), detail, status changes (cancel = stock once), private admin note, WhatsApp button, printable slip, CSV export | 5 | **Done** (Feature 3) |
 | SEO + Deploy | — | sitemap, robots, meta, Render deploy | 6 | Baaki |
 
 **Feature 1 (Login) done.** **Feature 2 (Cloth list) done** — size + colour filter chips, pagination 12/page (filters URL me rehte hain), hover second image, out-of-stock badge, no N+1 (selectinload). Cart session-based hai (Feature 3 me asli cart).
 **Step 5 Feature 1 (Admin access + dashboard) done** — `is_admin` flag, `flask make-admin <email>` CLI, /admin dashboard (totals, orders by status, today's orders, total sales, low stock ≤3, recent 10 orders), sidebar layout (mobile drawer), navbar me sirf admin ko "Admin" link. Normal customer ko /admin par 403, anonymous ko /login redirect. Email validator me `.local` TLD support fix kiya (admin@veloura.local ab login kar sakta hai).
 **Step 5 Feature 2 (Categories + products) done** — categories add/edit/delete (products hon par delete blocked, auto unique slug), products list (search, category + stock filter, 20/page pagination), product form (slug auto, discount < price check), variants editor (add/remove rows, duplicate size+colour blocked, stock ≥ 0), images (Cloudinary ya local `app/static/uploads/` fallback, jpg/png/webp max 5 MB, set main / reorder / delete), soft delete (orders hain) vs hard delete (orders nahi), inactive products shop se gayab. Har admin form CSRF-protected.
+**Step 5 Feature 3 (Orders) done** — order list (search order no./name/phone, status filter, newest first, 10/page), detail (customer, address, snapshot items, subtotal/shipping/total, COD, status history with changed_by), status changes (New→Confirmed→Shipped→Delivered; Cancelled/Delivered frozen; backwards blocked), cancel = stock restored exactly once (`stock_restored` guard), private admin note (slip par kabhi nahi), WhatsApp customer button (wa.me + order no. + status), printable slip (`/admin/orders/<id>/slip`, clean print CSS), CSV export with current filters. Order model me naye columns: order_number (VLR-YYYYMMDD-XXXX), email, state, subtotal, shipping, payment_method, admin_note, stock_restored, user_id; OrderItem me snapshots (product_name, size, colour); nayi table `order_status_history`. Migration startup par automatically chalta hai (`_migrate_step5_orders`). Checkout (Step 4 Feature 3) abhi bhi pending hai — orders admin ready hai, checkout aate hi yehi order_number/status history use karega.
 
 ---
 
@@ -129,9 +130,19 @@ Abhi rows: **62** — test ke liye: `mens-cotton-chinos` size **M** = 0 stock, p
 
 Abhi rows: **0** (Step 4 me bharegi)
 
-### 7. orders / 8. order_items — COD orders (Step 4)
+### 7. orders / 8. order_items / 9. order_status_history — COD orders
 
-Abhi rows: **0**
+orders me ab: id, **order_number** (VLR-YYYYMMDD-XXXX, unique), customer_name,
+phone, email, address, city, state, pincode, notes (customer), **admin_note**
+(private), status (New/Confirmed/Shipped/Delivered/Cancelled), subtotal,
+shipping, payment_method (COD), **stock_restored** (cancel = stock ek hi baar),
+total, created_at, user_id (nullable).
+order_items me ab snapshots bhi: **product_name, size, colour** (order ke time
+ka asli naam/size/colour — product badalne par order nahi badalta).
+order_status_history: har status change ki timeline (status, changed_by=admin
+email, created_at).
+
+Abhi rows: **0** (checkout Step 4 Feature 3 me aayega; admin panel ready hai)
 
 ---
 
@@ -142,6 +153,7 @@ Abhi rows: **0**
 - **Feature 2 tests:** `python tools/test_feature2.py` (53 checks — filters, sort, search, pagination, badges, N+1 query guard).
 - **Step 5 Feature 1 tests:** `python tools/test_admin1.py` (29 checks — make-admin CLI, access control, dashboard numbers, sidebar).
 - **Step 5 Feature 2 tests:** `python tools/test_admin2.py` (44 checks — category CRUD rules, product form validation, variants, images, delete rules, filters, pagination).
+- **Step 5 Feature 3 tests:** `python tools/test_admin3.py` (65 checks — search/filters, status flow, cancel-restock-once, admin note privacy, WhatsApp link, printable slip, CSV export).
 - **Photo uploads:** `CLOUDINARY_URL` set hai to Cloudinary; nahi hai to `app/static/uploads/` (git-ignored, README me clearly documented).
 - **Photos:** sab images local hain (`app/static/img/`), koi external hotlink nahi.
   Credits: `app/static/img/products/CREDITS.md` — dobara download: `python tools/fetch_images.py`
