@@ -1,0 +1,64 @@
+{#- Terms of service (Step 6 Part 1). Placeholders in [SQUARE BRACKETS]. -#}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+<section class="static-page container">
+    <p class="static-eyebrow">Legal</p>
+    <h1>Terms of Service</h1>
+    <p class="static-lead">Simple rules, so shopping stays simple.</p>
+
+    <div class="static-body">
+        <p>Last updated: [DATE — e.g. 22 October 2026]</p>
+
+        <h2>Using this store</h2>
+        <p>
+            By shopping at Veloura you agree to provide accurate details and to
+            use the website only for lawful purposes. You must be [18 years or
+            older], or have a parent or guardian's permission, to place an order.
+        </p>
+
+        <h2>Orders &amp; payment</h2>
+        <ul class="static-list">
+            <li>Every order is <strong>Cash on Delivery</strong> — pay when it arrives.</li>
+            <li>An order is confirmed only after our team verifies it on WhatsApp or phone.</li>
+            <li>Prices are in Indian Rupees (₹) and include GST unless stated otherwise.</li>
+            <li>We may cancel an order if the item is out of stock — you pay nothing.</li>
+        </ul>
+
+        <h2>Delivery</h2>
+        <p>
+            Estimated delivery windows are guidance, not guarantees. Please check
+            your address and pincode carefully — delays from courier issues are
+            outside our control, but we will always help resolve them.
+        </p>
+
+        <h2>Returns</h2>
+        <p>
+            See our
+            <a class="static-link" href="{{ url_for('main.shipping_returns') }}">Shipping &amp; Returns</a>
+            page for the full return and exchange rules.
+        </p>
+
+        <h2>Content &amp; trademarks</h2>
+        <p>
+            The Veloura name, logo, photos and website design belong to
+            [BUSINESS LEGAL NAME]. Do not copy them without written permission.
+        </p>
+
+        <h2>Changes</h2>
+        <p>
+            We may update these terms from time to time. The "Last updated"
+            date above always shows the current version.
+        </p>
+
+        <h2>Questions?</h2>
+        <p>
+            Reach us through the
+            <a class="static-link" href="{{ url_for('main.contact') }}">contact page</a>.
+        </p>
+    </div>
+</section>
+{% endblock %}

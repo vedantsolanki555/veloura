@@ -20,6 +20,7 @@ Routes:
     /admin/images/<id>/delete   Delete one image
     /admin/images/<id>/main     Make one image the main (first) image
     /admin/images/<id>/move     Move one image left/right in the gallery
+    /admin/messages             Contact-form messages (Step 6 Part 1)
 """
 
 import csv
@@ -39,6 +40,7 @@ from wtforms.validators import DataRequired, Length, NumberRange, Optional, Vali
 from app import db
 from app.models import (
     Category,
+    ContactMessage,
     Order,
     OrderItem,
     OrderStatusHistory,
@@ -55,6 +57,19 @@ from app.utils import (
 )
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
+
+# Unread contact-message count — shown as a badge on the sidebar "Messages"
+# link on every admin page (injected by the context processor below).
+@admin_bp.app_context_processor
+def inject_unread_messages():
+    from flask import has_request_context
+    if not has_request_context():
+        return {}
+    try:
+        return {"unread_message_count": ContactMessage.query.filter_by(is_read=False).count()}
+    except Exception:
+        # Never let the badge query break an admin page (e.g. during a migration).
+        return {"unread_message_count": 0}
 
 # Order statuses shown on the dashboard (same list Feature 3 will use).
 ORDER_STATUSES = ["New", "Confirmed", "Shipped", "Delivered", "Cancelled"]
@@ -938,3 +953,47 @@ def order_slip(order_id):
     """Printable order slip (packing slip) with clean print CSS."""
     order = db.session.get(Order, order_id) or abort(404)
     return render_template("admin/order_slip.html", order=order)
+
+
+# ---------- contact messages (Step 6 Part 1) ----------
+
+@admin_bp.route("/messages")
+@admin_required
+def messages():
+    """Messages sent from the /contact form — newest first, 20 per page."""
+    page = request.args.get("page", 1, type=int) or 1
+    if page < 1:
+        page = 1
+    pagination = (
+        ContactMessage.query
+        .order_by(ContactMessage.created_at.desc())
+        .paginate(page=page, per_page=20, error_out=False)
+    )
+    return render_template(
+        "admin/messages.html",
+        messages=pagination.items,
+        pagination=pagination,
+        unread_count=ContactMessage.query.filter_by(is_read=False).count(),
+    )
+
+
+@admin_bp.route("/messages/<int:message_id>/read", methods=["POST"])
+@admin_required
+def message_mark_read(message_id):
+    """Toggle the read flag of one message."""
+    message = db.session.get(ContactMessage, message_id) or abort(404)
+    message.is_read = not message.is_read
+    db.session.commit()
+    flash("Message marked as " + ("read." if message.is_read else "unread."), "success")
+    return redirect(url_for("admin.messages"))
+
+
+@admin_bp.route("/messages/<int:message_id>/delete", methods=["POST"])
+@admin_required
+def message_delete(message_id):
+    """Delete one message."""
+    message = db.session.get(ContactMessage, message_id) or abort(404)
+    db.session.delete(message)
+    db.session.commit()
+    flash("Message deleted.", "success")
+    return redirect(url_for("admin.messages"))

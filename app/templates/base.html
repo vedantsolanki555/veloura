@@ -129,9 +129,14 @@
             </div>
             <div class="footer-col">
                 <h4>Help</h4>
-                <a href="#">Contact</a>
-                <a href="#">Shipping</a>
-                <a href="#">Returns</a>
+                <a href="{{ url_for('main.contact') }}">Contact</a>
+                <a href="{{ url_for('main.shipping_returns') }}">Shipping &amp; Returns</a>
+                <a href="{{ url_for('main.about') }}">About Us</a>
+            </div>
+            <div class="footer-col">
+                <h4>Legal</h4>
+                <a href="{{ url_for('main.privacy') }}">Privacy Policy</a>
+                <a href="{{ url_for('main.terms') }}">Terms of Service</a>
             </div>
         </div>
         <div class="footer-bottom">

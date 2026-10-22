@@ -295,6 +295,28 @@ class OrderItem(db.Model):
         return f"<OrderItem order={self.order_id} product={self.product_id} x{self.quantity}>"
 
 
+class ContactMessage(db.Model):
+    """One message sent from the /contact form (Step 6 Part 1).
+
+    Saved so the owner can read customer questions in the admin panel
+    (/admin/messages). Never deleted automatically.
+    """
+
+    __tablename__ = "contact_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(120), nullable=False)
+    phone = db.Column(db.String(20), nullable=True)   # optional
+    message = db.Column(db.Text, nullable=False)
+    # True once the owner has opened it in the admin (small quality-of-life flag).
+    is_read = db.Column(db.Boolean, default=False, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+    def __repr__(self):
+        return f"<ContactMessage {self.id} from {self.email}>"
+
+
 class Cart(db.Model):
     """Shopping cart row — table ready, logic comes in Phase 4. (No data yet.)"""
 

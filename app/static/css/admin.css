@@ -627,6 +627,41 @@
 }
 
 /* ---------- 99. Responsive: sidebar becomes a drawer ---------- */
+/* ---------- Contact messages (Step 6 Part 1) ---------- */
+.admin-message-body {
+    max-width: 420px;
+    white-space: pre-line;
+    font-size: 14px;
+    color: var(--text-soft, #6b6560);
+}
+
+.admin-row-unread td { background: #fdfaf4; }
+
+.admin-badge-unread {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 8px;
+    border-radius: 8px;
+    background: var(--accent, #a67c52);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
+.admin-nav-unread {
+    margin-left: auto;
+    padding: 0 8px;
+    border-radius: 8px;
+    background: var(--accent, #a67c52);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 18px;
+}
+
 @media (max-width: 860px) {
     .admin-mobile-bar { display: flex; }
 

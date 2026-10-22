@@ -1,0 +1,58 @@
+{#- Privacy policy (Step 6 Part 1). Placeholders in [SQUARE BRACKETS]. -#}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+<section class="static-page container">
+    <p class="static-eyebrow">Legal</p>
+    <h1>Privacy Policy</h1>
+    <p class="static-lead">Your trust matters as much as your style.</p>
+
+    <div class="static-body">
+        <p>Last updated: [DATE — e.g. 22 October 2026]</p>
+
+        <h2>What we collect</h2>
+        <p>
+            When you place an order or create an account, we collect your name,
+            phone, email, delivery address and pincode. When you contact us, we
+            keep your message so we can reply. We never collect card or UPI
+            details — every order is Cash on Delivery.
+        </p>
+
+        <h2>How we use it</h2>
+        <ul class="static-list">
+            <li>To deliver your order and send updates on WhatsApp.</li>
+            <li>To answer your questions on the contact page.</li>
+            <li>To improve the store (aggregated, never sold).</li>
+        </ul>
+
+        <h2>What we never do</h2>
+        <ul class="static-list">
+            <li>We never sell or rent your personal data.</li>
+            <li>We never share your details with advertisers.</li>
+            <li>We never store payment card numbers (we do not accept cards online).</li>
+        </ul>
+
+        <h2>Cookies</h2>
+        <p>
+            Veloura uses a single session cookie to keep you logged in and to
+            remember your cart. There are no third-party advertising cookies.
+        </p>
+
+        <h2>Your rights</h2>
+        <p>
+            You can ask us to see, correct or delete your data any time —
+            write to <strong>[SUPPORT EMAIL]</strong> and we will act within
+            [X days].
+        </p>
+
+        <h2>Questions?</h2>
+        <p>
+            Reach us through the
+            <a class="static-link" href="{{ url_for('main.contact') }}">contact page</a>.
+        </p>
+    </div>
+</section>
+{% endblock %}

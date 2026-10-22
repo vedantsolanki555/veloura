@@ -1,0 +1,43 @@
+{#- Shipping & returns policy (Step 6 Part 1). Placeholders in [SQUARE BRACKETS]. -#}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+<section class="static-page container">
+    <p class="static-eyebrow">Policies</p>
+    <h1>Shipping &amp; Returns</h1>
+    <p class="static-lead">Delivered with care. Returned without stress.</p>
+
+    <div class="static-body">
+        <h2>Shipping</h2>
+        <ul class="static-list">
+            <li><strong>Delivery time:</strong> [X–Y business days] across India, depending on your pincode.</li>
+            <li><strong>Shipping fee:</strong> ₹{{ shipping_fee }} below ₹{{ "{:,}".format(free_shipping_above) }} — free above that.</li>
+            <li><strong>Cash on delivery</strong> available on every order.</li>
+            <li><strong>Tracking:</strong> we share updates on WhatsApp once your order ships.</li>
+        </ul>
+
+        <h2>Returns &amp; exchanges</h2>
+        <ul class="static-list">
+            <li><strong>Return window:</strong> [N days] from delivery — email us or message on WhatsApp to start.</li>
+            <li>Items must be unworn, unwashed and with original tags.</li>
+            <li>Free exchange for size issues within [N days]; return shipping is [free / paid by customer].</li>
+            <li>Refunds are processed to your [original payment method / bank account] within [X days] of us receiving the item.</li>
+        </ul>
+
+        <h2>Damaged or wrong item?</h2>
+        <p>
+            Tell us within [48 hours] of delivery with a photo — we will replace
+            the item or refund you in full, including shipping.
+        </p>
+
+        <h2>Need help?</h2>
+        <p>
+            Write to <a class="static-link" href="{{ url_for('main.contact') }}">our contact page</a>
+            or message us on WhatsApp — a real person will reply.
+        </p>
+    </div>
+</section>
+{% endblock %}

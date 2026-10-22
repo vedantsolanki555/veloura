@@ -116,6 +116,12 @@ def create_app():
     def forbidden(_error):
         return render_template("403.html"), 403
 
+    @app.errorhandler(500)
+    def server_error(_error):
+        # Gunicorn catches anything unhandled and turns it into a 500 —
+        # this page replaces Flask's plain white error screen.
+        return render_template("500.html"), 500
+
     # Create database tables on first run so the app works even before seed.py.
     # (seed.py also calls create_all — harmless to do it twice.)
     with app.app_context():

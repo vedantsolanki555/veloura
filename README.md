@@ -5,7 +5,29 @@ Premium clothing store website. Built with Python Flask, SQLAlchemy, PostgreSQL,
 ## Project status
 
 - **Step 1 (done):** project setup, database models, seed data, simple home page.
-- Later steps: design, cart, checkout, admin panel.
+- **Steps 2–5 (done):** design, cloth list, product detail, customer login, admin panel, cart, checkout, COD orders.
+- **Step 6 (in progress):** SEO, polish, production readiness, Render deployment. Part 1 (missing pages) done.
+
+## Placeholders you must fill in
+
+These appear in `[SQUARE BRACKETS]` on the live pages. Search the templates
+for `[` and replace them with your real details before launch:
+
+| Placeholder | Where it shows |
+| --- | --- |
+| `[STUDIO ADDRESS — full street address, city, state, pincode]` | `/contact` |
+| `[PHONE NUMBER — e.g. +91 98765 43210]` | `/contact` |
+| `[SUPPORT EMAIL — e.g. hello@veloura.in]` | `/contact`, `/privacy` |
+| `[CITY, STATE]` | `/about` |
+| `[DATE — e.g. 22 October 2026]` | `/privacy`, `/terms` (Last updated) |
+| `[X–Y business days]` | `/shipping-returns` |
+| `[N days]` (return window, exchange window) | `/shipping-returns` |
+| `[free / paid by customer]` (return shipping) | `/shipping-returns` |
+| `[original payment method / bank account]`, `[X days]` (refund) | `/shipping-returns` |
+| `[48 hours]` (damaged-item window) | `/shipping-returns` |
+| `[X days]` (data requests) | `/privacy` |
+| `[18 years or older]` | `/terms` |
+| `[BUSINESS LEGAL NAME]` | `/terms` |
 
 ## Requirements
 

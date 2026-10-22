@@ -11,11 +11,14 @@ Routes:
 
 import os
 
-from flask import Blueprint, render_template, request, url_for
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask_wtf import FlaskForm
 from sqlalchemy.orm import joinedload, selectinload
+from wtforms import StringField, SubmitField, TextAreaField
+from wtforms.validators import DataRequired, Length, Optional
 
 from app import db
-from app.models import Category, Product, ProductVariant
+from app.models import Category, ContactMessage, Product, ProductVariant
 
 main_bp = Blueprint("main", __name__)
 
@@ -173,6 +176,104 @@ def product_detail(product_id):
         whatsapp_number=_whatsapp_number(),
         meta_description=meta_description,
         related=related,
+    )
+
+
+# ---------- static info pages + contact (Step 6 Part 1) ----------
+
+class ContactForm(FlaskForm):
+    """Contact form. Server-side validation — never trust the browser."""
+
+    name = StringField("Your name", validators=[DataRequired(), Length(min=2, max=120)])
+    email = StringField("Email", validators=[DataRequired(), Length(max=120)])
+    phone = StringField("Phone (optional)", validators=[Optional(), Length(max=20)])
+    message = TextAreaField("Message", validators=[DataRequired(), Length(min=5, max=2000)])
+    submit = SubmitField("Send message")
+
+    def validate_email(self, field):
+        """Light email check — same rule as the login/register forms."""
+        value = (field.data or "").strip()
+        if value.count("@") != 1 or "." not in value.split("@")[-1]:
+            from wtforms.validators import ValidationError
+            raise ValidationError("Enter a valid email address.")
+
+
+@main_bp.route("/about")
+def about():
+    """About page — the Veloura story."""
+    return render_template(
+        "about.html",
+        title="About Us — Veloura",
+        meta_description="The story behind Veloura — premium ethnic and contemporary clothing, thoughtfully crafted for every occasion.",
+    )
+
+
+@main_bp.route("/contact", methods=["GET", "POST"])
+def contact():
+    """Contact page — store details, WhatsApp button, message form."""
+    form = ContactForm()
+    if form.validate_on_submit():
+        # Honeypot: real people never see or fill this field.
+        if request.form.get("website"):
+            flash("Your message could not be sent. Please try again.", "error")
+            return redirect(url_for("main.contact"))
+
+        db.session.add(
+            ContactMessage(
+                name=form.name.data.strip(),
+                email=form.email.data.strip().lower(),
+                phone=("".join(ch for ch in (form.phone.data or "") if ch.isdigit()) or None),
+                message=form.message.data.strip(),
+            )
+        )
+        db.session.commit()
+        flash("Thank you for reaching out! We will get back to you within 24 hours.", "success")
+        return redirect(url_for("main.contact"))
+
+    return render_template(
+        "contact.html",
+        title="Contact Us — Veloura",
+        meta_description="Get in touch with Veloura — WhatsApp, email or send us a message. We reply within 24 hours.",
+        form=form,
+        whatsapp_number=_whatsapp_number(),
+    )
+
+
+@main_bp.route("/shipping-returns")
+def shipping_returns():
+    """Shipping & returns policy page."""
+    # Live values from .env so the policy page always matches checkout.
+    fee = int(current_app.config["SHIPPING_FEE"])
+    free_above = int(current_app.config["FREE_SHIPPING_ABOVE"])
+    return render_template(
+        "shipping_returns.html",
+        title="Shipping & Returns — Veloura",
+        meta_description=(
+            f"Veloura shipping and returns — ₹{fee} shipping below ₹{free_above:,}, "
+            "free delivery above that, cash on delivery across India, easy returns."
+        ),
+        shipping_fee=fee,
+        free_shipping_above=free_above,
+    )
+
+
+@main_bp.route("/privacy")
+def privacy():
+    """Privacy policy page."""
+    return render_template(
+        "privacy.html",
+        title="Privacy Policy — Veloura",
+        meta_description="How Veloura collects, uses and protects your personal information.",
+    )
+
+
+@main_bp.route("/terms")
+def terms():
+    """Terms of service page."""
+    return render_template(
+        "terms.html",
+        title="Terms of Service — Veloura",
+        meta_description="The terms and conditions that apply when you shop at Veloura.",
     )
 
 

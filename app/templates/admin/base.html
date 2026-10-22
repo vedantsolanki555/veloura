@@ -53,6 +53,13 @@
                    class="admin-nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.orders') }}">
                     Orders
                 </a>
+                <a href="{{ url_for('admin.messages') }}"
+                   class="admin-nav-link {{ 'active' if request.endpoint and request.endpoint.startswith('admin.messages') }}">
+                    Messages
+                    {% if unread_message_count %}
+                    <span class="admin-nav-unread">{{ unread_message_count }}</span>
+                    {% endif %}
+                </a>
             </nav>
 
             <div class="admin-sidebar-foot">

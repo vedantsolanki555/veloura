@@ -1,0 +1,87 @@
+{#- Contact page — store details, WhatsApp button, message form (Step 6 Part 1). -#}
+{% extends "base.html" %}
+
+{% block title %}{{ title }}{% endblock %}
+{% block meta_description %}{{ meta_description }}{% endblock %}
+
+{% block content %}
+<section class="contact-section container">
+    <h1 class="page-title">Contact Us</h1>
+    <p class="contact-sub">We usually reply within 24 hours, seven days a week.</p>
+
+    <div class="contact-layout">
+        <!-- Store details + WhatsApp -->
+        <aside class="contact-details">
+            <h2>Store details</h2>
+            <dl class="contact-list">
+                <dt>Address</dt>
+                <dd>[STUDIO ADDRESS — full street address, city, state, pincode]</dd>
+                <dt>Phone</dt>
+                <dd>[PHONE NUMBER — e.g. +91 98765 43210]</dd>
+                <dt>Email</dt>
+                <dd>[SUPPORT EMAIL — e.g. hello@veloura.in]</dd>
+                <dt>Hours</dt>
+                <dd>Monday – Saturday, 10:00 AM – 7:00 PM IST</dd>
+            </dl>
+
+            {% if whatsapp_number %}
+            <a class="btn btn-outline contact-whatsapp"
+               href="https://wa.me/{{ whatsapp_number }}?text=Hi%20Veloura!%20I%20have%20a%20question."
+               target="_blank" rel="noopener">
+                Chat on WhatsApp
+            </a>
+            {% else %}
+            <p class="contact-note">
+                WhatsApp: add the <code>WHATSAPP_NUMBER</code> environment variable
+                to enable the WhatsApp button.
+            </p>
+            {% endif %}
+        </aside>
+
+        <!-- Message form -->
+        <div class="contact-form-wrap">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <p class="flash flash-{{ category }}">{{ message }}</p>
+                {% endfor %}
+            {% endwith %}
+
+            <form method="post" class="contact-form" novalidate>
+                {{ form.hidden_tag() }}
+
+                {# Honeypot — hidden from humans, bots love filling it in. #}
+                <div class="hp-field" aria-hidden="true">
+                    <label>Website<input type="text" name="website" tabindex="-1" autocomplete="off"></label>
+                </div>
+
+                <div class="form-field">
+                    {{ form.name.label }}
+                    {{ form.name(placeholder="Your full name", autocomplete="name") }}
+                    {% for error in form.name.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+
+                <div class="form-row">
+                    <div class="form-field">
+                        {{ form.email.label }}
+                        {{ form.email(placeholder="you@example.com", autocomplete="email") }}
+                        {% for error in form.email.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                    </div>
+                    <div class="form-field">
+                        {{ form.phone.label }}
+                        {{ form.phone(placeholder="10-digit mobile (optional)", autocomplete="tel") }}
+                        {% for error in form.phone.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                    </div>
+                </div>
+
+                <div class="form-field">
+                    {{ form.message.label }}
+                    {{ form.message(placeholder="How can we help?", rows=5) }}
+                    {% for error in form.message.errors %}<p class="field-error">{{ error }}</p>{% endfor %}
+                </div>
+
+                {{ form.submit(class="btn btn-primary contact-submit") }}
+            </form>
+        </div>
+    </div>
+</section>
+{% endblock %}

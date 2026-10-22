@@ -1,0 +1,12 @@
+{#- 500 page — something went wrong on our side (Step 6 Part 1). -#}
+{% extends "base.html" %}
+
+{% block title %}Something went wrong — Veloura{% endblock %}
+
+{% block content %}
+<section class="coming-soon">
+    <h1>500 — Something Went Wrong</h1>
+    <p>Something went wrong on our side. Please try again in a moment.</p>
+    <a href="{{ url_for('main.shop') }}" class="btn btn-outline">Back to Shop</a>
+</section>
+{% endblock %}

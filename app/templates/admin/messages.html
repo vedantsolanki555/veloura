@@ -1,0 +1,77 @@
+{#- Admin messages — contact-form submissions, newest first (Step 6 Part 1). -#}
+{% extends "admin/base.html" %}
+
+{% block title %}Messages — Veloura Admin{% endblock %}
+
+{% block admin_content %}
+<div class="admin-page-head">
+    <h1>Messages</h1>
+    <p class="admin-page-sub">
+        {{ pagination.total }} message(s)
+        {% if unread_count %} — {{ unread_count }} unread{% endif %}
+    </p>
+</div>
+
+<section class="admin-card">
+    {% if messages %}
+    <div class="admin-table-wrap">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>Received</th>
+                    <th>From</th>
+                    <th>Contact</th>
+                    <th>Message</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for message in messages %}
+                <tr {{ 'class="admin-row-unread"' if not message.is_read }}>
+                    <td class="admin-orders-date">{{ message.created_at.strftime("%d %b %Y, %H:%M") }}</td>
+                    <td>
+                        <strong>{{ message.name }}</strong>
+                        {% if not message.is_read %}<span class="admin-badge-unread">New</span>{% endif %}
+                    </td>
+                    <td>
+                        <a href="mailto:{{ message.email }}">{{ message.email }}</a>
+                        {% if message.phone %}<br><a href="tel:{{ message.phone }}">{{ message.phone }}</a>{% endif %}
+                    </td>
+                    <td class="admin-message-body">{{ message.message }}</td>
+                    <td>
+                        <form method="post" action="{{ url_for('admin.message_mark_read', message_id=message.id) }}"
+                              style="display:inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-mini">
+                                {{ "Mark unread" if message.is_read else "Mark read" }}
+                            </button>
+                        </form>
+                        <form method="post" action="{{ url_for('admin.message_delete', message_id=message.id) }}"
+                              style="display:inline" onsubmit="return confirm('Delete this message?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn-mini btn-mini-danger">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if pagination.pages > 1 %}
+    <nav class="admin-pagination" aria-label="Message pages">
+        {% if pagination.has_prev %}
+        <a href="{{ url_for('admin.messages', page=pagination.prev_num) }}" class="btn-mini">← Prev</a>
+        {% endif %}
+        <span class="admin-page-info">Page {{ pagination.page }} / {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+        <a href="{{ url_for('admin.messages', page=pagination.next_num) }}" class="btn-mini">Next →</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <p class="admin-empty">No messages yet — the /contact form inbox is empty.</p>
+    {% endif %}
+</section>
+{% endblock %}
