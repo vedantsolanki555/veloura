@@ -1,0 +1,52 @@
+# Veloura — Render blueprint (Step 6 Part 5).
+#
+# Deploy: Render Dashboard → New → Blueprint → pick this GitHub repo.
+# NO secret values are stored in this file. Render either generates them
+# (SECRET_KEY) or asks for them in the dashboard (DATABASE_URL etc.)
+# during setup — that is exactly the "env var NAMES only" requirement.
+
+services:
+  - type: web
+    name: veloura
+    runtime: python
+    plan: free                 # 0.1 CPU / 512 MB — upgrade later if needed
+    branch: main
+
+    buildCommand: pip install -r requirements.txt
+
+    # Migrations run BEFORE gunicorn on every deploy (fresh DB → full schema
+    # from migrations/; existing DB → incremental upgrades only).
+    startCommand: flask db upgrade && gunicorn wsgi:app
+
+    healthCheckPath: /healthz
+
+    envVars:
+      # Non-secret settings — safe to keep values here.
+      - key: FLASK_ENV
+        value: production
+      - key: PYTHON_VERSION    # fully qualified version (Render requirement)
+        value: 3.12.10
+
+      # Secret — Render generates a random one; never committed to git.
+      - key: SECRET_KEY
+        generateValue: true
+
+      # Site's public URL (used by sitemap.xml / robots.txt): takes the
+      # service's own onrender.com URL automatically.
+      - key: SITE_URL
+        fromService:
+          name: veloura
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+
+      # Prompted in the Render dashboard — names only, no values in git.
+      - key: DATABASE_URL      # Neon PostgreSQL connection string
+        sync: false
+      - key: CLOUDINARY_URL    # cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+        sync: false
+      - key: WHATSAPP_NUMBER   # digits only, country code, no +
+        sync: false
+      - key: SHIPPING_FEE      # optional, app defaults to 99
+        sync: false
+      - key: FREE_SHIPPING_ABOVE  # optional, app defaults to 1999
+        sync: false

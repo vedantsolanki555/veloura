@@ -498,6 +498,80 @@ with app.app_context():
     check("README documents flask init-db / flask db upgrade",
           "flask init-db" in readme and "flask db upgrade" in readme)
 
+    # ---------- Part 5: deployment files and guide ----------
+    import yaml as _yaml
+
+    gconf = open("gunicorn.conf.py", encoding="utf-8").read()
+    check("gunicorn.conf.py binds 0.0.0.0:$PORT",
+          'bind = "0.0.0.0:"' in gconf and "PORT" in gconf)
+    check("gunicorn.conf.py sets a sensible timeout", "timeout = 60" in gconf)
+    check("gunicorn logs to stdout (Render Logs tab)",
+          'accesslog = "-"' in gconf and 'errorlog = "-"' in gconf)
+
+    procfile = open("Procfile", encoding="utf-8").read().strip()
+    check("Procfile runs gunicorn wsgi:app", procfile == "web: gunicorn wsgi:app", procfile)
+
+    runtime = open("runtime.txt", encoding="utf-8").read().strip()
+    check("runtime.txt pins Python 3.12", runtime.startswith("python-3.12"), runtime)
+
+    ry = open("render.yaml", encoding="utf-8").read()
+    ry_doc = _yaml.safe_load(ry)
+    svc = ry_doc["services"][0]
+    check("render.yaml: python web service", svc["type"] == "web" and svc["runtime"] == "python")
+    check("render.yaml: build installs requirements",
+          svc["buildCommand"] == "pip install -r requirements.txt")
+    check("render.yaml: start runs migrations then gunicorn",
+          svc["startCommand"] == "flask db upgrade && gunicorn wsgi:app", svc["startCommand"])
+    check("render.yaml: health check /healthz", svc.get("healthCheckPath") == "/healthz")
+    check("render.yaml: FLASK_ENV=production",
+          any(e["key"] == "FLASK_ENV" and e.get("value") == "production"
+              for e in svc["envVars"]))
+    check("render.yaml: SECRET_KEY generated, not stored",
+          any(e["key"] == "SECRET_KEY" and e.get("generateValue") for e in svc["envVars"]))
+    wanted = {"SECRET_KEY", "DATABASE_URL", "CLOUDINARY_URL", "WHATSAPP_NUMBER",
+              "SITE_URL", "FREE_SHIPPING_ABOVE", "SHIPPING_FEE", "FLASK_ENV"}
+    keys = {e["key"] for e in svc["envVars"]}
+    check("render.yaml: all 8 required env var names present", wanted <= keys, str(wanted - keys))
+    secretish = [e for e in svc["envVars"]
+                 if "value" in e and e["key"] in
+                 {"SECRET_KEY", "DATABASE_URL", "CLOUDINARY_URL", "WHATSAPP_NUMBER"}]
+    check("render.yaml: no secret VALUES stored", secretish == [], str(secretish))
+
+    # README beginner guide (spec items 3a–h + 4).
+    for needle, label in [
+        ("Deploy Veloura (beginner step-by-step)", "deploy guide heading"),
+        ("neon.tech", "Neon database steps (3a)"),
+        ("cloudinary.com", "Cloudinary steps (3b)"),
+        ("New → Blueprint", "Render service steps (3c)"),
+        ("flask make-admin", "admin account steps (3d)"),
+        ("demo products/categories", "real content steps (3e)"),
+        ("Cash on Delivery", "test order steps (3f)"),
+        ("sleeps after 15 minutes", "free plan notes (3g)"),
+        ("Launch checklist", "launch checklist (3h)"),
+        ("Done for you by OpenCode", "who-did-what (item 4)"),
+    ]:
+        check(f"README deploy guide: {label}", needle in readme)
+
+    # Full production boot simulation — exactly what gunicorn does on Render:
+    # fresh process, FLASK_ENV=production, a Render-style postgres:// URL.
+    # (gunicorn itself cannot run on Windows; importing wsgi.py is the boot.)
+    import subprocess as _sp
+    _boot_env = dict(
+        os.environ,
+        FLASK_ENV="production",
+        SECRET_KEY="boot-test-only-not-a-real-key",
+        DATABASE_URL="postgres://veloura:secret@db.example.com:5432/veloura",
+    )
+    _boot_env.pop("FLASK_DEBUG", None)
+    _boot = _sp.run(
+        [sys.executable, "-c",
+         "from wsgi import app; print('BOOT-OK', app.config['SQLALCHEMY_DATABASE_URI'][:14])"],
+        capture_output=True, text=True, env=_boot_env, timeout=60,
+    )
+    check("Production boot: wsgi.py imports with postgres:// URL (gunicorn-style)",
+          _boot.returncode == 0 and "BOOT-OK postgresql://" in _boot.stdout,
+          (_boot.stdout + _boot.stderr)[-300:])
+
     # ---------- results ----------
     print(f"\n=== Step 6: {PASS} passed, {FAIL} failed ===")
     sys.exit(1 if FAIL else 0)

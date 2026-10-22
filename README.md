@@ -113,13 +113,139 @@ flask init-db                        # fresh empty DB only: create all tables at
 Never run `flask db upgrade` against a database that has live data without
 reviewing the generated migration first.
 
-## Deploy to Render
+# Deploy Veloura (beginner step-by-step)
 
-1. Push this repository to GitHub.
-2. On Render: create a new Web Service, point it at the repo.
-3. Build command: `pip install -r requirements.txt`
-4. Start command: `gunicorn wsgi:app`
-5. Add environment variables: `SECRET_KEY`, `DATABASE_URL` (Render Postgres), `CLOUDINARY_URL`, `FLASK_ENV=production`.
+> **Two people are involved: OpenCode (the code) and you (the accounts).**
+>
+> **Done for you by OpenCode — nothing to do here:**
+> `render.yaml` blueprint, `Procfile`, `gunicorn.conf.py`, `runtime.txt`
+> (Python 3.12.10), Flask-Migrate baseline migration (`flask db upgrade` runs
+> automatically on every deploy), `/healthz` health check, HTTPS redirect +
+> security headers, `postgres://` → `postgresql://` auto-fix (the bug that
+> crashed your first deploy), production `SECRET_KEY` guard, and this guide.
+>
+> **Steps YOU must do yourself** (only you can create accounts and see
+> secrets): steps 1–5 below (Neon, Cloudinary, Render, first admin account,
+> real products), then the launch checklist in step 8.
+
+## 1. Create the database (Neon) — ~5 minutes, YOU do this
+
+1. Go to <https://neon.tech> and sign up (free plan is enough).
+2. Create a project, e.g. `veloura`. Pick a region close to your Render region.
+3. Open **Connection Details**, choose the **Pooled** connection string
+   (it starts with `postgresql://…`), and copy it.
+4. Keep it private — it contains your password. You will paste it into the
+   Render dashboard in step 3. **Never** put it in this repository.
+
+## 2. Create the image host (Cloudinary) — ~5 minutes, YOU do this
+
+1. Go to <https://cloudinary.com> and sign up (free plan is enough).
+2. From the dashboard, copy your **Cloud name**, **API Key** and
+   **API Secret**.
+3. Build the value yourself (the secret never touches git):
+
+   ```
+   cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+   ```
+
+4. You will paste that whole string as `CLOUDINARY_URL` in step 3.
+
+## 3. Create the site (Render) — ~10 minutes, YOU do this
+
+1. Push this repository to GitHub (if you have not already).
+2. On <https://dashboard.render.com> click **New → Blueprint**.
+3. Connect your (private) GitHub repo `veloura` and let Render read
+   `render.yaml`.
+4. Choose the **Free** plan when asked.
+5. Render now prompts for the environment variables (names come from
+   `render.yaml`, values stay only in Render):
+   | Variable | What to enter |
+   | --- | --- |
+   | `SECRET_KEY` | Leave the generated value as-is. |
+   | `DATABASE_URL` | The Neon pooled connection string from step 1. |
+   | `CLOUDINARY_URL` | The `cloudinary://…` string from step 2. |
+   | `WHATSAPP_NUMBER` | Digits only, with country code, no `+` (e.g. `919876543210`). |
+   | `SHIPPING_FEE` | e.g. `99` (optional). |
+   | `FREE_SHIPPING_ABOVE` | e.g. `1999` (optional). |
+   | `SITE_URL` | Filled automatically from your `…onrender.com` URL. |
+   | `FLASK_ENV` | Already `production` — don't change it. |
+6. Click **Deploy**. The build runs `pip install -r requirements.txt`,
+   then the start command runs `flask db upgrade` (creates every table on
+   the empty Neon database) and boots `gunicorn wsgi:app`.
+7. Watch the **Logs** tab: it should end with `Veloura started in production
+   mode.` and no tracebacks. Open your `https://veloura.onrender.com` URL —
+   if it slept, the first visit takes ~1 minute.
+
+> Tables are handled for you: Render runs `flask db upgrade` on **every**
+> deploy (fresh DB → baseline schema, later deploys → migrations only).
+> If you ever start from a completely empty database outside Render, run
+> `flask init-db` instead (creates tables, never deletes data).
+
+## 4. Create YOUR admin account — ~5 minutes, YOU do this
+
+`seed.py` is demo-only and refuses to run in production, so your real admin
+comes from your own registration:
+
+1. On the live site, open `/register` and create **your** account
+   (use your real email — this is your customer account too).
+2. Promote it to admin. Render's free plan has **no web shell**, so run it
+   from your own machine against the production database:
+
+   ```bash
+   # PowerShell (Windows) — paste YOUR Neon string, never commit it
+   $env:DATABASE_URL = "postgresql://…your neon url…"
+   flask make-admin you@example.com
+   ```
+
+   (On the paid Render plan you could instead use the dashboard **Shell**
+   tab and run the same `flask make-admin you@example.com` there.)
+3. Log out, then log in at `/login` with that account and open `/admin`.
+
+## 5. Real content instead of demo data — YOU do this
+
+1. In `/admin`: **Categories** → add your real categories; **Products** →
+   add your real products with your own photos (they upload straight to
+   Cloudinary — the admin warning banner disappears once `CLOUDINARY_URL`
+   is set).
+2. Delete the demo products/categories (see
+   [Demo seed data](#demo-seed-data-development-only)) — a product that
+   already has orders is only hidden, never destroyed.
+
+## 6. Test the store — YOU do this
+
+1. Place a small **Cash on Delivery** order from the live site.
+2. Confirm it appears in `/admin → Orders` with the correct status
+   (`New`), and that the status flow (Confirm → Ship → Deliver) works.
+3. On the product page, click a **WhatsApp order button** — it must open a
+   chat pre-filled with the product details and your number.
+
+## 7. Free plan notes (read once)
+
+- The site **sleeps after 15 minutes** with no visitors; the next visit
+  takes ~60 seconds to wake it up. After that it is normal again.
+- Free instances get **750 instance-hours/month**; a sleeping service uses
+  none. Moving up removes sleeping — Render **Settings → Instance** and
+  pick a paid plan whenever you are ready.
+- The disk is **wiped on every redeploy/restart** — that is why uploads
+  go to Cloudinary and the database lives on Neon. Nothing local ever
+  matters in production.
+- **Custom domain + HTTPS:** Render **Settings → Domains** → add your
+  domain, follow the DNS instructions; Render provisions the HTTPS
+  certificate automatically. Then update `SITE_URL` to your domain.
+
+## 8. Launch checklist
+
+- [ ] Every `[PLACEHOLDER]` in the pages is filled (list at the top of
+      this README: address, phone, support email, return window…).
+- [ ] Demo products and categories deleted; real photos uploaded.
+- [ ] Shipping policy, returns window and privacy text read as your real
+      policy.
+- [ ] One test COD order placed, confirmed in `/admin → Orders`, status
+      updated, WhatsApp link checked.
+- [ ] `SITE_URL` set to your final domain (used by sitemap/robots).
+- [ ] Google Search Console: add the property, submit
+      `https://your-domain/sitemap.xml`, press **Indexing → Request
+      indexing** for the home page.
 
 ## Project structure
 
