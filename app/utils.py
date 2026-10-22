@@ -104,6 +104,10 @@ def save_product_image(file_storage):
             folder="veloura/products",
             resource_type="image",
             format=ext if ext != "jpeg" else "jpg",
+            # Delivery defaults: Cloudinary serves WebP/AVIF where supported
+            # and picks a sensible quality — big savings, same look.
+            quality="auto",
+            fetch_format="auto",
         )
         return result["secure_url"], result["public_id"]
 

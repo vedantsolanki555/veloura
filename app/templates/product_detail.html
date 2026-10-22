@@ -76,7 +76,8 @@
                 {% set img = product.images[0] if product.images else None %}
                 <img id="pd-main-img"
                      src="{{ img.image_url if img else 'https://placehold.co/800x1000?text=Veloura' }}"
-                     alt="{{ img.alt if img and img.alt else product.name }}">
+                     alt="{{ img.alt if img and img.alt else product.name }}"
+                     width="800" height="1000">
                 {% if total_stock == 0 %}
                     <span class="badge badge-sale pd-oos-badge">Out of Stock</span>
                 {% endif %}
@@ -92,7 +93,7 @@
                         aria-label="Show photo {{ loop.index }} of {{ product.images | length }}">
                     <img src="{{ img.image_url }}"
                          alt="{{ img.alt if img.alt else product.name }}"
-                         loading="lazy">
+                         loading="lazy" width="800" height="1000">
                 </button>
                 {% endfor %}
             </div>

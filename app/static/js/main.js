@@ -14,10 +14,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const links = document.getElementById("nav-links");
 
     if (burger && links) {
-        burger.addEventListener("click", () => {
-            const open = links.classList.toggle("open");
+        const setMenu = (open) => {
+            links.classList.toggle("open", open);
             burger.classList.toggle("open", open);
             burger.setAttribute("aria-expanded", String(open));
+        };
+        burger.addEventListener("click", () => {
+            setMenu(!links.classList.contains("open"));
+        });
+        // Keyboard support: Escape closes the menu and returns focus to the button.
+        document.addEventListener("keydown", (event) => {
+            if (event.key === "Escape" && links.classList.contains("open")) {
+                setMenu(false);
+                burger.focus();
+            }
         });
     }
 
@@ -242,6 +252,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     return;
                 }
                 if (cartQty) cartQty.value = qtyInput.value || "1";
+                // Friendly loading state — the server round-trip can take a moment.
+                addBtn.disabled = true;
+                addBtn.textContent = "Adding…";
             });
         }
 
@@ -265,5 +278,19 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         update();   // paint the initial state
+    }
+
+    // ---------------------------------------------------------------
+    // 5) Contact form — friendly "Sending…" loading state
+    // ---------------------------------------------------------------
+    const contactForm = document.getElementById("contact-form");
+    if (contactForm) {
+        contactForm.addEventListener("submit", () => {
+            const btn = contactForm.querySelector("[type=submit]");
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = "Sending…";
+            }
+        });
     }
 });

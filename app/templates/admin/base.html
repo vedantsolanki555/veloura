@@ -115,6 +115,13 @@
             if (overlay) {
                 overlay.addEventListener("click", function () { toggle(false); });
             }
+            // Keyboard: Escape closes the drawer and returns focus to the button.
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && sidebar.classList.contains("open")) {
+                    toggle(false);
+                    burger.focus();
+                }
+            });
         })();
     </script>
     {% block admin_scripts %}{% endblock %}

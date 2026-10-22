@@ -11,7 +11,8 @@ What happens here:
 4. Register URL blueprints (routes).
 """
 
-from flask import Flask
+from flask import Flask, request
+from flask_compress import Compress
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
@@ -70,6 +71,9 @@ def create_app():
     login_manager.login_view = "auth.login"          # where ?next= redirects
     login_manager.login_message_category = "info"    # flash style
 
+    # gzip every text response (HTML/CSS/JS) — browsers handle it automatically.
+    Compress(app)
+
     # Secure session cookie defaults (protects the login session).
     app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
     app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
@@ -121,6 +125,25 @@ def create_app():
         # Gunicorn catches anything unhandled and turns it into a 500 —
         # this page replaces Flask's plain white error screen.
         return render_template("500.html"), 500
+
+    # Static file caching (Step 6 Part 3):
+    # - images/fonts/ico change rarely  -> cache 1 year ("far future")
+    # - css/js are NOT fingerprinted     -> cache 7 days so a new deploy
+    #   shows up within a week (or after Ctrl+F5).
+    _FAR_FUTURE = {"jpg", "jpeg", "png", "webp", "svg", "ico", "woff", "woff2"}
+    _WEEK = {"css", "js"}
+
+    @app.after_request
+    def add_static_cache_headers(response):
+        if request.path.startswith("/static/"):
+            ext = request.path.rsplit(".", 1)[-1].lower()
+            if ext in _FAR_FUTURE:
+                response.cache_control.public = True
+                response.cache_control.max_age = 60 * 60 * 24 * 365
+            elif ext in _WEEK:
+                response.cache_control.public = True
+                response.cache_control.max_age = 60 * 60 * 24 * 7
+        return response
 
     # Create database tables on first run so the app works even before seed.py.
     # (seed.py also calls create_all — harmless to do it twice.)

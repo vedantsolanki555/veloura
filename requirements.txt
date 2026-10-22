@@ -23,5 +23,8 @@ python-dotenv==1.0.1
 # Production web server (used on Render: gunicorn wsgi:app)
 gunicorn==22.0.0
 
+# gzip compression for HTML/CSS/JS responses (smaller pages, faster loads)
+Flask-Compress==1.14
+
 # Cloudinary (used in a later step for product images; installed now so setup is done once)
 cloudinary==1.41.0

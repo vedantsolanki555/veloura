@@ -11,7 +11,8 @@
     --text:      #1a1a1a;   /* main text */
     --text-soft: #6b6560;   /* secondary text */
     --primary:   #1a1a1a;   /* dark — buttons, headings */
-    --accent:    #a67c52;   /* warm gold — highlights, links hover */
+    --accent:    #a67c52;   /* warm gold — highlights, borders, hover */
+    --accent-ink:#8a6540;   /* darker gold — gold TEXT on light bg (WCAG AA 5:1) */
     --border:    #e8e2da;   /* hairline borders */
     --sale:      #9b2c2c;   /* discount price red */
 
@@ -46,6 +47,13 @@ body {
 img { max-width: 100%; display: block; }
 a   { color: inherit; text-decoration: none; }
 button { font-family: inherit; cursor: pointer; }
+
+/* Accessibility: a visible gold ring on every keyboard-focused control. */
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
 
 h1, h2, h3, h4 {
     font-family: var(--font-heading);
@@ -216,7 +224,7 @@ h1, h2, h3, h4 {
     font-size: 12px;
     letter-spacing: 0.3em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
     margin-bottom: 20px;
 }
 
@@ -319,7 +327,7 @@ h1, h2, h3, h4 {
     font-size: 13px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
     white-space: nowrap;
     border-bottom: 1px solid transparent;
     transition: border-color 0.25s var(--ease);
@@ -678,7 +686,7 @@ h1, h2, h3, h4 {
     font-size: 12px;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
     margin-bottom: 10px;
 }
 .pd-title {
@@ -1083,6 +1091,17 @@ h1, h2, h3, h4 {
     .pd-actions .pd-cart-btn,
     .pd-actions .pd-wa-btn { flex: 1 1 100%; max-width: none; }
     .nav-auth-link { font-size: 12px; letter-spacing: 0.06em; }
+}
+
+/* Very small phones (360px-class): trim padding so nothing overflows. */
+@media (max-width: 400px) {
+    .container { padding: 0 16px; }
+    .hero { padding: 64px 16px 48px; }
+    .hero h1 { font-size: 2.1rem; }
+    .section { padding: 44px 0; }
+    .page-title { font-size: 26px; }
+    .static-page h1 { font-size: 28px; }
+    .footer-inner { padding: 48px 16px 32px; }
 }
 
 /* ============================================================
@@ -1596,7 +1615,7 @@ h1, h2, h3, h4 {
     font-weight: 500;
     letter-spacing: 0.18em;
     text-transform: uppercase;
-    color: var(--accent);
+    color: var(--accent-ink);
     margin-bottom: 10px;
 }
 

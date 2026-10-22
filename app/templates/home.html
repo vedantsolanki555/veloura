@@ -31,7 +31,7 @@
 <!-- ============ MODELS: MEN + WOMEN ============ -->
 <section class="models-split">
     <a href="{{ url_for('main.shop_category', slug='men') }}" class="model-card">
-        <img src="{{ model_images.men }}" alt="Men’s collection model" loading="lazy">
+        <img src="{{ model_images.men }}" alt="Men’s collection model" loading="lazy" width="1400" height="900">
         <div class="model-overlay">
             <p class="model-eyebrow">The Gentleman</p>
             <h2>Men</h2>
@@ -39,7 +39,7 @@
         </div>
     </a>
     <a href="{{ url_for('main.shop_category', slug='women') }}" class="model-card">
-        <img src="{{ model_images.women }}" alt="Women’s collection model" loading="lazy">
+        <img src="{{ model_images.women }}" alt="Women’s collection model" loading="lazy" width="1400" height="900">
         <div class="model-overlay">
             <p class="model-eyebrow">The Muse</p>
             <h2>Women</h2>
@@ -76,7 +76,7 @@
             <a href="{{ url_for('main.shop_category', slug=cat.slug) }}" class="category-tile">
                 <!-- Real model photo from app/images.py -->
                 <img src="{{ category_images.get(cat.slug, 'https://placehold.co/600x800?text=Veloura') }}"
-                     alt="{{ cat.name }} collection" loading="lazy">
+                     alt="{{ cat.name }} collection" loading="lazy" width="1400" height="900">
                 <span class="tile-label">{{ cat.name }}</span>
             </a>
             {% endfor %}

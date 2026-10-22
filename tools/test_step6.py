@@ -295,6 +295,69 @@ with app.app_context():
     check("All public pages have unique titles", len(seen_titles) == len(public), seen_titles)
     check("All public pages have a real meta description", ok_meta)
 
+    # ---------- Part 3: polish + performance ----------
+    print("\n-- Part 3: polish and performance --")
+
+    # Image hygiene: lazy loading + width/height on product cards (no layout shift).
+    r = c.get(f"/product/{product.id}")
+    pd_html = r.data.decode()
+    check("Product gallery main image has width+height",
+          'width="800"' in pd_html and 'height="1000"' in pd_html)
+    shop_html = c.get("/shop").data.decode()
+    check("Product cards use loading=lazy + width/height",
+          'loading="lazy"' in shop_html and 'width="800"' in shop_html and 'height="1000"' in shop_html)
+    home_html2 = c.get("/").data.decode()
+    check("Home images have width/height", 'width="1400"' in home_html2 and 'height="900"' in home_html2)
+
+    # Cloudinary uploads store auto-quality/format (checked in code — see utils.py).
+    utils_src = open(os.path.join("app", "utils.py"), encoding="utf-8").read()
+    check("Cloudinary upload uses quality=auto + fetch_format=auto",
+          'quality="auto"' in utils_src and 'fetch_format="auto"' in utils_src)
+
+    # Static cache headers: images far-future (1 year), css/js one week.
+    r = c.get("/static/img/favicon.svg")
+    check("Images cached far future (1 year)",
+          r.status_code == 200 and "max-age=31536000" in r.headers.get("Cache-Control", ""))
+    r = c.get("/static/css/style.css")
+    check("CSS cached for a week",
+          r.status_code == 200 and "max-age=604800" in r.headers.get("Cache-Control", ""))
+    r = c.get("/static/js/main.js")
+    check("JS cached for a week",
+          r.status_code == 200 and "max-age=604800" in r.headers.get("Cache-Control", ""))
+
+    # gzip compression on HTML.
+    r = c.get("/", headers={"Accept-Encoding": "gzip"})
+    check("HTML is gzip-compressed when the browser asks",
+          r.headers.get("Content-Encoding") == "gzip")
+
+    # Accessibility: visible keyboard focus styles + Escape-to-close menus.
+    css = open(os.path.join("app", "static", "css", "style.css"), encoding="utf-8").read()
+    check("Visible :focus-visible outline defined", ":focus-visible" in css and "outline: 2px solid" in css)
+    check("Darker gold token for AA text contrast", "--accent-ink" in css)
+    js = open(os.path.join("app", "static", "js", "main.js"), encoding="utf-8").read()
+    check("Mobile menu closes with Escape key", 'event.key === "Escape"' in js)
+    admin_base = open(os.path.join("app", "templates", "admin", "base.html"), encoding="utf-8").read()
+    check("Admin sidebar closes with Escape key", 'event.key === "Escape"' in admin_base)
+
+    # Loading states.
+    check("Add-to-cart shows a loading state", "Adding…" in js)
+    check("Contact form shows a sending state", "Sending…" in js and 'id="contact-form"' in
+          open(os.path.join("app", "templates", "contact.html"), encoding="utf-8").read())
+
+    # Empty states already exist on the key pages.
+    cart_html = c.get("/cart").data.decode()
+    check("/cart shows an empty state when nothing is in the cart", "cart-empty" in cart_html)
+    shop_tpl = open(os.path.join("app", "templates", "shop.html"), encoding="utf-8").read()
+    check("/shop template has a no-products empty state", "No products found" in shop_tpl)
+
+    # Internal link crawler: every internal link must return 200.
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__))))
+    from crawl_links import crawl as crawl_site
+    pages_crawled, broken_links, dead_links = crawl_site()
+    check(f"Link crawler visited pages ({len(pages_crawled)})", len(pages_crawled) > 10)
+    check("Link crawler found no broken internal links", broken_links == [], broken_links)
+    check('Link crawler found no dead href="#"', dead_links == [], dead_links)
+
     # ---------- results ----------
     print(f"\n=== Step 6: {PASS} passed, {FAIL} failed ===")
     sys.exit(1 if FAIL else 0)

@@ -63,7 +63,7 @@
                     <td>
                         {% set thumb = thumb_url(product) %}
                         {% if thumb %}
-                        <img src="{{ thumb }}" alt="" class="admin-thumb">
+                        <img src="{{ thumb }}" alt="" class="admin-thumb" loading="lazy">
                         {% else %}
                         <span class="admin-thumb admin-thumb-empty">—</span>
                         {% endif %}

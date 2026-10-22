@@ -8,11 +8,12 @@
         {% set imgs = product.images %}
         {% set img = imgs[0] if imgs else None %}
         <img src="{{ img.image_url if img else 'https://placehold.co/600x800?text=Veloura' }}"
-             alt="{{ img.alt if img and img.alt else product.name }}" loading="lazy">
+             alt="{{ img.alt if img and img.alt else product.name }}" loading="lazy"
+             width="800" height="1000">
         {# Second photo fades in on hover (desktop only, see CSS). #}
         {% if imgs and imgs|length > 1 %}
             <img src="{{ imgs[1].image_url }}" alt="" aria-hidden="true"
-                 loading="lazy" class="card-img-hover">
+                 loading="lazy" class="card-img-hover" width="800" height="1000">
         {% endif %}
 
         {% if stock_total == 0 %}

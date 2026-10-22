@@ -48,7 +48,7 @@
                 {% endfor %}
             {% endwith %}
 
-            <form method="post" class="contact-form" novalidate>
+            <form method="post" class="contact-form" id="contact-form" novalidate>
                 {{ form.hidden_tag() }}
 
                 {# Honeypot — hidden from humans, bots love filling it in. #}
