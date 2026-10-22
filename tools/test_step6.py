@@ -336,8 +336,8 @@ with app.app_context():
     check("Darker gold token for AA text contrast", "--accent-ink" in css)
     js = open(os.path.join("app", "static", "js", "main.js"), encoding="utf-8").read()
     check("Mobile menu closes with Escape key", 'event.key === "Escape"' in js)
-    admin_base = open(os.path.join("app", "templates", "admin", "base.html"), encoding="utf-8").read()
-    check("Admin sidebar closes with Escape key", 'event.key === "Escape"' in admin_base)
+    admin_js = open(os.path.join("app", "static", "js", "admin.js"), encoding="utf-8").read()
+    check("Admin sidebar closes with Escape key", 'event.key === "Escape"' in admin_js)
 
     # Loading states.
     check("Add-to-cart shows a loading state", "Adding…" in js)
@@ -357,6 +357,146 @@ with app.app_context():
     check(f"Link crawler visited pages ({len(pages_crawled)})", len(pages_crawled) > 10)
     check("Link crawler found no broken internal links", broken_links == [], broken_links)
     check('Link crawler found no dead href="#"', dead_links == [], dead_links)
+
+    # ---------- Part 4: production readiness ----------
+    r = c.get("/healthz")
+    check("/healthz returns 200 ok", r.status_code == 200 and r.data.strip() == b"ok")
+
+    home_resp = c.get("/")
+    csp = home_resp.headers.get("Content-Security-Policy", "")
+    check("CSP header present", "default-src 'self'" in csp)
+    check("CSP allows only our own scripts", "script-src 'self'" in csp and "'unsafe-eval'" not in csp)
+    check("CSP allows Google Fonts + Cloudinary",
+          "fonts.googleapis.com" in csp and "res.cloudinary.com" in csp)
+    check("X-Content-Type-Options: nosniff", home_resp.headers.get("X-Content-Type-Options") == "nosniff")
+    check("X-Frame-Options: DENY", home_resp.headers.get("X-Frame-Options") == "DENY")
+    check("Referrer-Policy set", bool(home_resp.headers.get("Referrer-Policy")))
+
+    # No executable inline <script> left anywhere (JSON-LD data blocks are fine).
+    for tpl in ["checkout.html", os.path.join("admin", "base.html"),
+                os.path.join("admin", "order_detail.html"),
+                os.path.join("admin", "product_form.html")]:
+        html = open(os.path.join("app", "templates", tpl), encoding="utf-8").read()
+        inline = [m for m in re.findall(r"<script\b[^>]*>", html)
+                  if "src=" not in m and "ld+json" not in m]
+        check(f"No inline scripts in {os.path.basename(tpl)}", inline == [], inline)
+
+    # postgres:// (Neon/Render) is auto-converted to postgresql:// (SQLAlchemy 2).
+    from config import _read_database_url
+    saved_db = os.environ.get("DATABASE_URL")
+    os.environ["DATABASE_URL"] = "postgres://user:pass@db.example/veloura"
+    try:
+        converted = _read_database_url()
+    finally:
+        if saved_db is None:
+            os.environ.pop("DATABASE_URL", None)
+        else:
+            os.environ["DATABASE_URL"] = saved_db
+    check("postgres:// URL converted to postgresql://",
+          converted.startswith("postgresql://"), converted[:20])
+
+    # Production refuses to boot without a real SECRET_KEY.
+    from config import get_config
+    saved_env = {k: os.environ.get(k) for k in ("FLASK_ENV", "SECRET_KEY")}
+    os.environ["FLASK_ENV"] = "production"
+    os.environ.pop("SECRET_KEY", None)
+    try:
+        refused = False
+        try:
+            create_app()
+        except RuntimeError:
+            refused = True
+    finally:
+        for k, v in saved_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    check("Production refuses to start without SECRET_KEY", refused)
+
+    # Production config flags.
+    os.environ["FLASK_ENV"] = "production"
+    try:
+        from config import ProductionConfig
+        check("FLASK_ENV=production picks ProductionConfig", get_config() is ProductionConfig)
+        check("Production sets ENFORCE_HTTPS", ProductionConfig.ENFORCE_HTTPS is True)
+        check("Production secures session cookies",
+              ProductionConfig.SESSION_COOKIE_SECURE is True)
+    finally:
+        os.environ["FLASK_ENV"] = "development"
+
+    # Shared rate limiter used by /login and /contact.
+    from app.ratelimit import clear_failures, is_limited, record_failure
+    test_key = "__test_rate_key__"
+    clear_failures(test_key)
+    limiter_ok = not is_limited(test_key, max_attempts=3, window=60)
+    for _ in range(3):
+        record_failure(test_key, window=60)
+    limiter_ok = limiter_ok and is_limited(test_key, max_attempts=3, window=60)
+    clear_failures(test_key)
+    limiter_ok = limiter_ok and not is_limited(test_key, max_attempts=3, window=60)
+    check("Rate limiter blocks after max attempts and resets", limiter_ok)
+
+    contact_src = open(os.path.join("app", "routes", "main.py"), encoding="utf-8").read()
+    check("/contact route uses the shared rate limiter",
+          "is_limited(rate_key" in contact_src)
+    auth_src = open(os.path.join("app", "routes", "auth.py"), encoding="utf-8").read()
+    check("/login uses the shared rate limiter", "from app.ratelimit import" in auth_src)
+
+    # Production uploads must refuse the local fallback (ephemeral disk).
+    from io import BytesIO as _BytesIO
+    from werkzeug.datastructures import FileStorage
+    from app.utils import save_product_image
+    saved_upload_env = {k: os.environ.get(k) for k in ("FLASK_ENV", "CLOUDINARY_URL")}
+    os.environ["FLASK_ENV"] = "production"
+    os.environ.pop("CLOUDINARY_URL", None)
+    try:
+        refused_upload = False
+        try:
+            save_product_image(FileStorage(stream=_BytesIO(b"fake"), filename="x.png"))
+        except ValueError:
+            refused_upload = True
+    finally:
+        for k, v in saved_upload_env.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    check("Production refuses local image uploads without CLOUDINARY_URL", refused_upload)
+
+    # Flask commands: init-db exists and is registered.
+    runner = app.test_cli_runner()
+    result = runner.invoke(args=["init-db"])
+    check("flask init-db command exists and runs", result.exit_code == 0, str(result.output))
+
+    # seed.py refuses to run in production without --force.
+    seed_src = open("seed.py", encoding="utf-8").read()
+    check("seed.py guards production", "Refusing to seed demo data" in seed_src)
+
+    # Flask-Migrate is wired (migrations directory or migrate object).
+    check("Flask-Migrate wired into the app", hasattr(app, "extensions")
+          and any("migrate" in k for k in app.extensions))
+
+    # Baseline migration exists and creates every table (built on an empty
+    # DB, stamped on the dev DB — see Step 6 Part 4 notes in PROJECT_MAP).
+    import glob as _glob
+    versions = _glob.glob(os.path.join("migrations", "versions", "*.py"))
+    baseline = [f for f in versions
+                if "baseline" in open(f, encoding="utf-8").read().lower()]
+    check("Migrations directory with baseline migration",
+          os.path.exists(os.path.join("migrations", "alembic.ini")) and bool(baseline))
+    if baseline:
+        baseline_src = open(baseline[0], encoding="utf-8").read()
+        check("Baseline migration creates all 10 tables",
+              baseline_src.count("op.create_table") == 10,
+              str(baseline_src.count("op.create_table")))
+
+    # README documents demo-data cleanup + migrations (Part 4 item 7).
+    readme = open("README.md", encoding="utf-8").read()
+    check("README explains deleting demo seed data",
+          "Demo seed data" in readme and "Delete" in readme)
+    check("README documents flask init-db / flask db upgrade",
+          "flask init-db" in readme and "flask db upgrade" in readme)
 
     # ---------- results ----------
     print(f"\n=== Step 6: {PASS} passed, {FAIL} failed ===")

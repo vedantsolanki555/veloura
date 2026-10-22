@@ -8,9 +8,7 @@ Routes:
     /account    Profile + "My orders" placeholder (real orders in Feature 3)
 """
 
-from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-from time import monotonic
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
@@ -20,6 +18,11 @@ from wtforms.validators import DataRequired, EqualTo, Length, ValidationError
 
 from app import db, login_manager
 from app.models import User
+from app.ratelimit import (
+    clear_failures as _clear_failures,
+    is_limited as _rate_limited,
+    record_failure as _record_failure,
+)
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -67,27 +70,10 @@ class LoginForm(FlaskForm):
 
 
 # ---------- login rate limit ----------
-# 5 failed tries per 15 minutes per (IP + email). In-memory is fine for one
-# process (local dev / single gunicorn worker). Key = "ip|email".
-_failed_attempts = defaultdict(list)  # key -> list of monotonic() timestamps
+# 5 failed tries per 15 minutes per (IP + email). Shared with /contact via
+# app/ratelimit.py (Step 6 Part 4). Key = "ip|email".
 _RATE_LIMIT_MAX = 5
 _RATE_LIMIT_WINDOW = 15 * 60  # seconds
-
-
-def _rate_limited(key):
-    """True if this key has failed too many times in the last 15 minutes."""
-    now = monotonic()
-    recent = [t for t in _failed_attempts[key] if now - t < _RATE_LIMIT_WINDOW]
-    _failed_attempts[key] = recent
-    return len(recent) >= _RATE_LIMIT_MAX
-
-
-def _record_failure(key):
-    _failed_attempts[key].append(monotonic())
-
-
-def _clear_failures(key):
-    _failed_attempts.pop(key, None)
 
 
 # ---------- helpers ----------
@@ -143,7 +129,7 @@ def login():
     rate_key = f"{request.remote_addr}|{form.email.data.lower() if form.email.data else ''}"
 
     if form.validate_on_submit():
-        if _rate_limited(rate_key):
+        if _rate_limited(rate_key, _RATE_LIMIT_MAX, _RATE_LIMIT_WINDOW):
             flash("Too many failed attempts. Please try again in 15 minutes.", "error")
             return render_template("auth/login.html", form=form, title="Log in", next=request.args.get("next", ""))
 
@@ -151,7 +137,7 @@ def login():
 
         # Always the same generic message — never reveal which half is wrong.
         if user is None or not user.check_password(form.password.data):
-            _record_failure(rate_key)
+            _record_failure(rate_key, _RATE_LIMIT_WINDOW)
             flash("Invalid email or password.", "error")
             return render_template("auth/login.html", form=form, title="Log in", next=request.args.get("next", ""))
 

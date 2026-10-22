@@ -20,6 +20,7 @@ from wtforms.validators import DataRequired, Length, Optional
 
 from app import db
 from app.models import Category, ContactMessage, Product, ProductVariant
+from app.ratelimit import is_limited, record_failure
 
 main_bp = Blueprint("main", __name__)
 
@@ -240,6 +241,14 @@ def contact():
         if request.form.get("website"):
             flash("Your message could not be sent. Please try again.", "error")
             return redirect(url_for("main.contact"))
+
+        # Rate limit: 3 messages per IP every 15 minutes (spam protection,
+        # shared with /login via app/ratelimit.py).
+        rate_key = f"contact|{request.remote_addr}"
+        if is_limited(rate_key, max_attempts=3, window=15 * 60):
+            flash("Too many messages sent. Please try again in 15 minutes.", "error")
+            return redirect(url_for("main.contact"))
+        record_failure(rate_key, window=15 * 60)
 
         db.session.add(
             ContactMessage(

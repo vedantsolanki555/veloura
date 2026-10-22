@@ -4,16 +4,22 @@ App factory for Veloura.
 "App factory" means: a function that builds and returns a configured Flask
 app. This pattern keeps the app object clean and makes testing easier later.
 
-What happens here:
-1. Create the Flask app.
-2. Apply settings from config.py.
-3. Initialise the database (db).
-4. Register URL blueprints (routes).
+What happens here (Step 6 Part 4 — production readiness):
+1. Create the Flask app and apply settings from config.py.
+2. In production: refuse to start without SECRET_KEY, trust Render's proxy
+   headers (ProxyFix), redirect http → https, send security headers (CSP etc.),
+   log to stdout, and let Flask-Migrate manage the database schema.
+3. In development: create missing tables automatically (SQLite).
 """
 
-from flask import Flask, request
+import logging
+import os
+import sys
+
+from flask import Flask, Response, redirect, request
 from flask_compress import Compress
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 
@@ -22,6 +28,11 @@ from config import get_config
 # `db` is the shared SQLAlchemy object. Models and routes import it from here:
 #   from app import db
 db = SQLAlchemy()
+
+# Flask-Migrate (Alembic) — versioned database migrations (Step 6 Part 4).
+# Create a migration:  flask db migrate -m "what changed"
+# Apply on the server: flask db upgrade   (run automatically on Render)
+migrate = Migrate()
 
 # Flask-Login keeps the logged-in user in the session ("current_user").
 login_manager = LoginManager()
@@ -59,11 +70,26 @@ def create_app():
 
     app = Flask(__name__)
 
-    # Apply configuration (SECRET_KEY, DATABASE_URL, etc.)
+    # Apply configuration (SECRET_KEY, DATABASE_URL, shipping, cookies…).
     app.config.from_object(get_config())
+
+    is_production = app.config.get("ENFORCE_HTTPS", False)  # set by ProductionConfig
+
+    # ---- Production safety checks (fail fast, with a clear message) ----
+    if is_production:
+        real_secret = os.environ.get("SECRET_KEY", "")
+        if not real_secret or real_secret == "dev-only-insecure-secret-key":
+            # Without a real key, sessions cannot be trusted — refuse to start.
+            # (This is what gunicorn reports as "Worker failed to boot".)
+            raise RuntimeError(
+                "SECRET_KEY environment variable is required in production. "
+                "Generate one with: python -c \"import secrets; print(secrets.token_hex(32))\" "
+                "and set it in the Render dashboard."
+            )
 
     # Connect the database to this app.
     db.init_app(app)
+    migrate.init_app(app, db)
 
     # Customer login (Flask-Login) + CSRF protection on every form.
     login_manager.init_app(app)
@@ -74,15 +100,67 @@ def create_app():
     # gzip every text response (HTML/CSS/JS) — browsers handle it automatically.
     Compress(app)
 
-    # Secure session cookie defaults (protects the login session).
-    app.config.setdefault("SESSION_COOKIE_HTTPONLY", True)
-    app.config.setdefault("SESSION_COOKIE_SAMESITE", "Lax")
-    # Secure cookies only make sense over HTTPS (production).
-    if not app.debug:
-        app.config.setdefault("SESSION_COOKIE_SECURE", True)
-
     # Money formatting filter, available in every template.
     app.jinja_env.filters["inr"] = inr
+
+    # ---- Production plumbing: ProxyFix + HTTPS redirect + logging ----
+    if is_production and not app.testing:
+        # Render sits in front of us: X-Forwarded-Proto/For carry the real
+        # protocol + client IP. ProxyFix teaches Werkzeug to trust them
+        # (only ONE proxy hop — Render — so this cannot be spoofed).
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
+        # Redirect plain http → https (request.is_secure works thanks to
+        # ProxyFix above). /healthz is exempt so Render's health check
+        # can never loop.
+        @app.before_request
+        def force_https():
+            if not request.is_secure and request.path != "/healthz":
+                return redirect(request.url.replace("http://", "https://", 1), code=301)
+
+        # Log to STDOUT — Render shows it in the "Logs" tab. Only levels and
+        # messages are logged; form values, passwords and tokens never are.
+        handler = logging.StreamHandler(sys.stdout)
+        handler.setFormatter(logging.Formatter(
+            "%(asctime)s %(levelname)s %(name)s: %(message)s"
+        ))
+        app.logger.addHandler(handler)
+        app.logger.setLevel(logging.INFO)
+        app.logger.info("Veloura started in production mode.")
+
+    # ---- Health check for Render (Part 5 wires /healthz into render.yaml) ----
+    @app.route("/healthz")
+    def healthz():
+        """Liveness probe: 200 OK with no database or session involvement."""
+        return Response("ok", mimetype="text/plain")
+
+    # ---- Security headers on every response (Step 6 Part 4) ----
+    # CSP: only our own scripts/styles, Google Fonts CSS + font files,
+    # Cloudinary + placehold.co images. No inline scripts (they were all
+    # moved to /static/js/*.js in this step). Inline style="" attributes
+    # are still allowed ('unsafe-inline' under style-src) — they are
+    # first-party and cannot run code.
+    _CSP = "; ".join([
+        "default-src 'self'",
+        "script-src 'self'",
+        "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+        "font-src https://fonts.gstatic.com",
+        "img-src 'self' data: https://res.cloudinary.com https://placehold.co",
+        "connect-src 'self'",
+        "frame-ancestors 'none'",
+        "base-uri 'self'",
+        "form-action 'self'",
+        "object-src 'none'",
+    ])
+
+    @app.after_request
+    def add_security_headers(response):
+        response.headers.setdefault("Content-Security-Policy", _CSP)
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+        return response
 
     # Register routes. Each Blueprint is a group of related pages.
     from app.routes.main import main_bp
@@ -105,7 +183,7 @@ def create_app():
         from app.cart import cart_count
         return {"cart_count": cart_count()}
 
-    # Custom CLI commands (flask make-admin <email>).
+    # Custom CLI commands (flask init-db, flask make-admin, flask list-orders).
     from app.cli import register_commands
     register_commands(app)
 
@@ -145,15 +223,29 @@ def create_app():
                 response.cache_control.max_age = 60 * 60 * 24 * 7
         return response
 
-    # Create database tables on first run so the app works even before seed.py.
-    # (seed.py also calls create_all — harmless to do it twice.)
-    with app.app_context():
-        db.create_all()
-        _migrate_user_columns()
-        _migrate_step5_columns()
-        _migrate_step5_orders()
+    # ---- Database bootstrap ----
+    # Development: create any missing tables + fix old SQLite files, so
+    # `python wsgi.py` works right after cloning. Production: tables come
+    # from `flask db upgrade` (Render start command) or `flask init-db`
+    # (manual) — the app itself never touches the schema at import time,
+    # which is what made the old startup fragile on Postgres.
+    if not is_production:
+        with app.app_context():
+            db.create_all()
+            _migrate_user_columns()
+            _migrate_step5_columns()
+            _migrate_step5_orders()
 
     return app
+
+
+# ---------------------------------------------------------------------------
+# One-time column upgrades for OLD SQLite databases (development only).
+# Each function skips gracefully when a table does not exist yet.
+# ---------------------------------------------------------------------------
+
+def _table_exists(inspector, name):
+    return inspector.has_table(name)
 
 
 def _migrate_user_columns():
@@ -165,7 +257,11 @@ def _migrate_user_columns():
     """
     from sqlalchemy import inspect
 
-    columns = {c["name"] for c in inspect(db.engine).get_columns("users")}
+    inspector = inspect(db.engine)
+    if not _table_exists(inspector, "users"):
+        return
+
+    columns = {c["name"] for c in inspector.get_columns("users")}
     if "name" not in columns:
         db.session.execute(db.text("ALTER TABLE users ADD COLUMN name VARCHAR(120)"))
     if "phone" not in columns:
@@ -185,18 +281,20 @@ def _migrate_step5_columns():
 
     inspector = inspect(db.engine)
 
-    product_cols = {c["name"] for c in inspector.get_columns("products")}
-    if "is_active" not in product_cols:
-        # Default TRUE so every existing product stays visible after the upgrade.
-        db.session.execute(db.text(
-            "ALTER TABLE products ADD COLUMN is_active BOOLEAN DEFAULT TRUE NOT NULL"
-        ))
+    if _table_exists(inspector, "products"):
+        product_cols = {c["name"] for c in inspector.get_columns("products")}
+        if "is_active" not in product_cols:
+            # Default TRUE so every existing product stays visible after the upgrade.
+            db.session.execute(db.text(
+                "ALTER TABLE products ADD COLUMN is_active BOOLEAN DEFAULT TRUE NOT NULL"
+            ))
 
-    image_cols = {c["name"] for c in inspector.get_columns("product_images")}
-    if "public_id" not in image_cols:
-        db.session.execute(db.text(
-            "ALTER TABLE product_images ADD COLUMN public_id VARCHAR(300)"
-        ))
+    if _table_exists(inspector, "product_images"):
+        image_cols = {c["name"] for c in inspector.get_columns("product_images")}
+        if "public_id" not in image_cols:
+            db.session.execute(db.text(
+                "ALTER TABLE product_images ADD COLUMN public_id VARCHAR(300)"
+            ))
 
     db.session.commit()
 
@@ -215,6 +313,8 @@ def _migrate_step5_orders():
     from sqlalchemy import inspect
 
     inspector = inspect(db.engine)
+    if not _table_exists(inspector, "orders"):
+        return
 
     # ---- orders ----
     order_cols = {c["name"] for c in inspector.get_columns("orders")}
@@ -257,20 +357,21 @@ def _migrate_step5_orders():
         ))
 
     # ---- order_items ----
-    item_cols = {c["name"] for c in inspector.get_columns("order_items")}
-    if "product_name" not in item_cols:
-        db.session.execute(db.text(
-            "ALTER TABLE order_items ADD COLUMN product_name VARCHAR(200) "
-            "NOT NULL DEFAULT ''"
-        ))
-    if "size" not in item_cols:
-        db.session.execute(db.text(
-            "ALTER TABLE order_items ADD COLUMN size VARCHAR(20) NOT NULL DEFAULT ''"
-        ))
-    if "colour" not in item_cols:
-        db.session.execute(db.text(
-            "ALTER TABLE order_items ADD COLUMN colour VARCHAR(50) NOT NULL DEFAULT ''"
-        ))
+    if _table_exists(inspector, "order_items"):
+        item_cols = {c["name"] for c in inspector.get_columns("order_items")}
+        if "product_name" not in item_cols:
+            db.session.execute(db.text(
+                "ALTER TABLE order_items ADD COLUMN product_name VARCHAR(200) "
+                "NOT NULL DEFAULT ''"
+            ))
+        if "size" not in item_cols:
+            db.session.execute(db.text(
+                "ALTER TABLE order_items ADD COLUMN size VARCHAR(20) NOT NULL DEFAULT ''"
+            ))
+        if "colour" not in item_cols:
+            db.session.execute(db.text(
+                "ALTER TABLE order_items ADD COLUMN colour VARCHAR(50) NOT NULL DEFAULT ''"
+            ))
 
     # Old default status was 'pending' — normalise to the new 'New'.
     db.session.execute(db.text(

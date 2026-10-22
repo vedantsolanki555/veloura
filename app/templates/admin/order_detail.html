@@ -149,15 +149,4 @@
 </section>
 {% endblock %}
 
-{% block admin_scripts %}
-<script>
-// Confirm dialog before the Cancel button submits.
-document.querySelectorAll("form[data-confirm]").forEach(function (form) {
-    form.addEventListener("submit", function (event) {
-        if (!window.confirm(form.getAttribute("data-confirm"))) {
-            event.preventDefault();
-        }
-    });
-});
-</script>
-{% endblock %}
+{#- Confirm-dialog script moved to /static/js/admin.js (CSP). -#}

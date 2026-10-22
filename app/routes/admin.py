@@ -62,14 +62,24 @@ admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
 # link on every admin page (injected by the context processor below).
 @admin_bp.app_context_processor
 def inject_unread_messages():
+    import os
+
     from flask import has_request_context
     if not has_request_context():
         return {}
     try:
-        return {"unread_message_count": ContactMessage.query.filter_by(is_read=False).count()}
+        unread = ContactMessage.query.filter_by(is_read=False).count()
     except Exception:
         # Never let the badge query break an admin page (e.g. during a migration).
-        return {"unread_message_count": 0}
+        unread = 0
+    return {
+        "unread_message_count": unread,
+        # Production must use Cloudinary for uploads — warn until it's set.
+        "cloudinary_missing": (
+            os.environ.get("FLASK_ENV") == "production"
+            and not os.environ.get("CLOUDINARY_URL")
+        ),
+    }
 
 # Order statuses shown on the dashboard (same list Feature 3 will use).
 ORDER_STATUSES = ["New", "Confirmed", "Shipped", "Delivered", "Cancelled"]

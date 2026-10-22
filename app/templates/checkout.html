@@ -108,11 +108,5 @@
     </div>
 </section>
 
-<script>
-    // Prevent accidental double-submit: the button greys out once clicked.
-    document.getElementById("checkout-form").addEventListener("submit", function () {
-        var btn = this.querySelector(".checkout-submit");
-        if (btn) { btn.disabled = true; btn.value = "Placing order…"; }
-    });
-</script>
+{#- Double-submit guard moved to /static/js/main.js (CSP). -#}
 {% endblock %}

@@ -294,3 +294,14 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
+
+// ---------------------------------------------------------------
+// 6) Checkout — prevent accidental double-submit (button greys out)
+// ---------------------------------------------------------------
+const checkoutForm = document.getElementById("checkout-form");
+if (checkoutForm) {
+    checkoutForm.addEventListener("submit", function () {
+        var btn = this.querySelector(".checkout-submit");
+        if (btn) { btn.disabled = true; btn.value = "Placing order…"; }
+    });
+}

@@ -84,6 +84,35 @@ Uploaded files in `app/static/uploads/` are **never committed to git**
 (`.gitignore` covers the folder) and the folder is safe to delete at any time.
 Only JPG, PNG and WEBP images up to 5 MB each are accepted.
 
+## Demo seed data (development only)
+
+`python seed.py` inserts **demo content**: 4 categories, 18 products and one
+local admin (`admin@veloura.local`). It is safe to re-run — it skips everything
+if data already exists and never deletes anything.
+
+- **It refuses to run when `FLASK_ENV=production`** (use `python seed.py
+  --force` only if you really want demo data on the live site).
+- Before launch, delete the demo content from the admin panel: **Products →
+  each product → Delete** (a product with real orders is only hidden, never
+  destroyed), **Categories → Delete**, and finally delete the demo admin user
+  under your own account settings. Your real data is never touched by seed.py.
+- On a brand-new production database, create tables with `flask init-db`
+  (or let the Render start command run `flask db upgrade`), then add your own
+  products through the admin panel.
+
+## Database migrations (Flask-Migrate)
+
+The schema is tracked in `migrations/` (baseline migration from Step 6):
+
+```bash
+flask db migrate -m "what changed"   # create a migration after changing models
+flask db upgrade                     # apply migrations (Render runs this on deploy)
+flask init-db                        # fresh empty DB only: create all tables at once
+```
+
+Never run `flask db upgrade` against a database that has live data without
+reviewing the generated migration first.
+
 ## Deploy to Render
 
 1. Push this repository to GitHub.

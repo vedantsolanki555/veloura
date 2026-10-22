@@ -101,6 +101,20 @@ PRODUCTS = [
 def seed():
     """Insert sample data. Does nothing if data already exists."""
 
+    import os
+    import sys
+
+    # Step 6 Part 4: sample products are for local development only.
+    # In production (Render) run `flask init-db` + your real data instead —
+    # `python seed.py --force` overrides this if you really mean it.
+    if os.environ.get("FLASK_ENV") == "production" and "--force" not in sys.argv:
+        print(
+            "Refusing to seed demo data in production. "
+            "Use 'flask init-db' for an empty database, "
+            "or 'python seed.py --force' if you really want the demo data."
+        )
+        return
+
     app = create_app()
 
     with app.app_context():

@@ -90,40 +90,20 @@
                     {% endfor %}
                 {% endwith %}
 
+                {% if cloudinary_missing %}
+                <p class="flash flash-error">
+                    CLOUDINARY_URL is not set — image uploads are disabled in
+                    production. Add it in the Render dashboard (Settings →
+                    Environment) and redeploy.
+                </p>
+                {% endif %}
+
                 {% block admin_content %}{% endblock %}
             </div>
         </main>
     </div>
 
-    <script>
-        // Mobile sidebar: burger button toggles the drawer.
-        (function () {
-            var burger = document.getElementById("admin-burger");
-            var sidebar = document.getElementById("admin-sidebar");
-            var overlay = document.getElementById("admin-overlay");
-            if (!burger || !sidebar) return;
-
-            function toggle(open) {
-                sidebar.classList.toggle("open", open);
-                overlay.classList.toggle("visible", open);
-                burger.setAttribute("aria-expanded", String(open));
-            }
-
-            burger.addEventListener("click", function () {
-                toggle(!sidebar.classList.contains("open"));
-            });
-            if (overlay) {
-                overlay.addEventListener("click", function () { toggle(false); });
-            }
-            // Keyboard: Escape closes the drawer and returns focus to the button.
-            document.addEventListener("keydown", function (event) {
-                if (event.key === "Escape" && sidebar.classList.contains("open")) {
-                    toggle(false);
-                    burger.focus();
-                }
-            });
-        })();
-    </script>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
     {% block admin_scripts %}{% endblock %}
 </body>
 </html>

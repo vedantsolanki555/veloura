@@ -2,12 +2,34 @@
 Flask CLI commands — run with `flask <command>`.
 
 Commands:
+    init-db          Create all tables on a brand-new database (production
+                     alternative to `flask db upgrade`; run once).
     make-admin <email>   Promote an existing registered user to admin.
-    list-orders          List every COD order (newest first).
+    list-orders      List every COD order (newest first).
 """
 
 import click
 from flask.cli import with_appcontext
+
+
+@click.command("init-db")
+@with_appcontext
+def init_db():
+    """Create every table on the connected database.
+
+    Fresh production database (Render + Neon Postgres):
+
+        flask init-db
+
+    Existing databases should use `flask db upgrade` instead (Alembic
+    migrations from `flask db migrate`). Safe to re-run: create_all only
+    creates *missing* tables, it never changes existing ones.
+    """
+    from app import db
+    import app.models  # noqa: F401  — registers all models with SQLAlchemy
+
+    db.create_all()
+    click.echo("Database tables created.")
 
 
 @click.command("make-admin")
@@ -71,5 +93,6 @@ def list_orders():
 
 def register_commands(app):
     """Attach our custom commands to the Flask app."""
+    app.cli.add_command(init_db)
     app.cli.add_command(make_admin)
     app.cli.add_command(list_orders)

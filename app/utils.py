@@ -112,6 +112,14 @@ def save_product_image(file_storage):
         return result["secure_url"], result["public_id"]
 
     # ---- Local fallback (development, no Cloudinary configured) ----
+    # Production must never fall back to local files: Render's disk is
+    # ephemeral (uploads vanish on redeploy) and not served by the CDN.
+    if os.environ.get("FLASK_ENV") == "production":
+        raise ValueError(
+            "CLOUDINARY_URL is not set — image uploads are disabled in "
+            "production. Add it in the Render dashboard and redeploy."
+        )
+
     # Save to app/static/uploads/ with a random name so two files with the
     # same original name can never overwrite each other.
     upload_dir = os.path.join(
