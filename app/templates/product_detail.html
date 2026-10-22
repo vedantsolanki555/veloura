@@ -7,6 +7,34 @@
 
 {% block title %}{{ product.name }} — Veloura{% endblock %}
 {% block meta_description %}{{ meta_description }}{% endblock %}
+{% block og_title %}{{ product.name }} — Veloura{% endblock %}
+{% block og_description %}{{ meta_description }}{% endblock %}
+{% block og_image %}{{ og_image_url }}{% endblock %}
+
+{% block json_ld %}
+{#- Product schema — name, image, price in INR, availability (Step 6 Part 2). #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": {{ product.name | tojson }},
+    "image": {{ (og_image_url,) | tojson }},
+    "description": {{ meta_description | tojson }},
+    "brand": {
+        "@type": "Brand",
+        "name": "Veloura"
+    },
+    "offers": {
+        "@type": "Offer",
+        "url": {{ (request.url_root.rstrip('/') ~ '/product/' ~ product.id) | tojson }},
+        "priceCurrency": "INR",
+        "price": "{{ '%.2f'|format(product.discount_price or product.price) }}",
+        "availability": "{{ 'https://schema.org/InStock' if total_stock > 0 else 'https://schema.org/OutOfStock' }}",
+        "itemCondition": "https://schema.org/NewCondition"
+    }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 

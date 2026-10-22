@@ -64,6 +64,7 @@ Open <http://127.0.0.1:5000/> in your browser. You should see "Veloura".
 | `DATABASE_URL` | PostgreSQL connection string. If unset, app uses SQLite locally (`instance/veloura.db`) — **dev fallback only, do not use SQLite in production**. |
 | `CLOUDINARY_URL` | Cloudinary credentials for product image uploads (admin panel). Format: `cloudinary://API_KEY:API_SECRET@CLOUD_NAME` |
 | `WHATSAPP_NUMBER` | Digits-only WhatsApp number (country code, no `+`) for the WhatsApp order buttons. |
+| `SITE_URL` | Public site URL (e.g. `https://veloura.onrender.com`) — used in `sitemap.xml` and `robots.txt`. Optional locally. |
 | `FLASK_ENV` | `development` or `production`. |
 
 Secrets live only in environment variables (via `.env` locally, Render dashboard in production). Never hardcode them.

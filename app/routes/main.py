@@ -12,6 +12,7 @@ Routes:
 import os
 
 from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask import Response
 from flask_wtf import FlaskForm
 from sqlalchemy.orm import joinedload, selectinload
 from wtforms import StringField, SubmitField, TextAreaField
@@ -105,6 +106,8 @@ def shop_category(slug):
     context["all_categories"] = Category.query.order_by(Category.name).all()
     context["active_category"] = slug
     context["category_obj"] = category
+    # Use the real category name ("Men", "Accessories") for the <title>.
+    context["page_title"] = category.name
     context["meta_description"] = _shop_meta(context)
     return render_template("shop.html", **context)
 
@@ -149,6 +152,13 @@ def product_detail(product_id):
         f"{product.name} at Veloura. Free delivery and cash on delivery."
     )
 
+    # Absolute URL of the main photo — used for Open Graph + Product JSON-LD.
+    _main_image = product.images[0].image_url if product.images else "/static/img/home/hero-women.jpg"
+    if _main_image.startswith("/"):   # local file → make it absolute
+        og_image_url = request.url_root.rstrip("/") + _main_image
+    else:
+        og_image_url = _main_image    # already a Cloudinary https URL
+
     # "You may also like": 4 other products from the same category.
     related = (
         Product.query.options(
@@ -175,8 +185,21 @@ def product_detail(product_id):
         variants_json=variants_json,
         whatsapp_number=_whatsapp_number(),
         meta_description=meta_description,
+        og_image_url=og_image_url,
         related=related,
     )
+
+
+@main_bp.route("/product/<product_slug>")
+def product_by_slug(product_slug):
+    """Clean slug URL (/product/mens-silk-kurta) → 301 to the id URL.
+
+    Keeps old shared links working and gives search engines ONE canonical
+    URL per product (the canonical tag on the product page points to the
+    /product/<id> form used everywhere inside the site).
+    """
+    product = Product.query.filter_by(slug=product_slug, is_active=True).first_or_404()
+    return redirect(url_for("main.product_detail", product_id=product.id), code=301)
 
 
 # ---------- static info pages + contact (Step 6 Part 1) ----------
@@ -275,6 +298,70 @@ def terms():
         title="Terms of Service — Veloura",
         meta_description="The terms and conditions that apply when you shop at Veloura.",
     )
+
+
+# ---------- SEO: sitemap + robots (Step 6 Part 2) ----------
+
+def _site_url():
+    """Absolute site root, from SITE_URL env var (production) or the request.
+
+    Example: "https://veloura.onrender.com" (no trailing slash).
+    """
+    configured = (os.environ.get("SITE_URL", "") or "").strip()
+    if configured:
+        return configured.rstrip("/")
+    return request.url_root.rstrip("/")
+
+
+@main_bp.route("/sitemap.xml")
+def sitemap():
+    """XML sitemap: home, shop, categories, active products, static pages."""
+    base = _site_url()
+
+    # (path, lastmod-or-None) — newest content first is not required by Google.
+    entries = [
+        ("/", None),
+        ("/shop", None),
+        ("/about", None),
+        ("/contact", None),
+        ("/shipping-returns", None),
+        ("/privacy", None),
+        ("/terms", None),
+    ]
+
+    for category in Category.query.order_by(Category.id).all():
+        entries.append((f"/shop/{category.slug}", None))
+
+    for product in (
+        Product.query.filter_by(is_active=True)
+        .order_by(Product.created_at.desc())
+        .all()
+    ):
+        lastmod = product.created_at.strftime("%Y-%m-%d") if product.created_at else None
+        entries.append((f"/product/{product.id}", lastmod))
+
+    return Response(
+        render_template("sitemap.xml", base=base, entries=entries),
+        mimetype="application/xml",
+    )
+
+
+@main_bp.route("/robots.txt")
+def robots():
+    """robots.txt — keep search engines out of admin, cart, checkout, account."""
+    sitemap_url = f"{_site_url()}/sitemap.xml"
+    body = "\n".join([
+        "User-agent: *",
+        "Disallow: /admin",
+        "Disallow: /cart",
+        "Disallow: /checkout",
+        "Disallow: /account",
+        "Disallow: /order",
+        "",
+        f"Sitemap: {sitemap_url}",
+        "",
+    ])
+    return Response(body, mimetype="text/plain")
 
 
 # ---------- internals ----------

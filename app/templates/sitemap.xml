@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+{#- Sitemap template — base is the absolute site root (SITE_URL env var). -#}
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{%- for loc, lastmod in entries %}
+  <url>
+    <loc>{{ (base + loc)|e }}</loc>
+    {%- if lastmod %}
+    <lastmod>{{ lastmod }}</lastmod>
+    {%- endif %}
+  </url>
+{%- endfor %}
+</urlset>

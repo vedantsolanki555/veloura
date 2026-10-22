@@ -7,8 +7,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Veloura{% endblock %}</title>
-    <meta name="description" content="{% block meta_description %}Veloura — premium clothing store{% endblock %}">
+    <title>{% block title %}Veloura — Premium Clothing{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Veloura — premium ethnic and contemporary clothing for men, women and kids. Free delivery and cash on delivery across India.{% endblock %}">
+
+    {#- Robots: public pages are indexable; cart/checkout/account override this. #}
+    <meta name="robots" content="{% block robots %}index, follow{% endblock %}">
+
+    {#- Canonical URL: always the clean page URL, never with ?sort= / ?page= filters. #}
+    <link rel="canonical" href="{% block canonical_url %}{{ request.url_root.rstrip('/') + request.path }}{% endblock %}">
+
+    {#- Open Graph + Twitter cards — how the page looks when shared. #}
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Veloura">
+    <meta property="og:locale" content="en_IN">
+    <meta property="og:title" content="{% block og_title %}Veloura — Premium Clothing{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Premium ethnic and contemporary clothing for men, women and kids. Wear the Elegance.{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ url_for('static', filename='img/home/hero-women.jpg', _external=True) }}{% endblock %}">
+    <meta property="og:url" content="{{ self.canonical_url() }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ self.og_title() }}">
+    <meta name="twitter:description" content="{{ self.og_description() }}">
+    <meta name="twitter:image" content="{{ self.og_image() }}">
+
+    {#- Favicon: "V" monogram in gold on ink (Step 6 Part 2). #}
+    <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
+    <link rel="alternate icon" href="{{ url_for('static', filename='img/favicon-32x32.png') }}" sizes="32x32" type="image/png">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='img/apple-touch-icon.png') }}">
+
+    {#- Page-specific structured data (JSON-LD): Organization on home, Product on product pages. #}
+    {% block json_ld %}{% endblock %}
 
     <!-- Google Fonts: serif for headings, sans-serif for body -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

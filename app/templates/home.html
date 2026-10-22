@@ -3,6 +3,21 @@
 {% block title %}Veloura — Premium Clothing{% endblock %}
 {% block meta_description %}Veloura — premium ethnic and contemporary clothing for men, women and kids.{% endblock %}
 
+{% block json_ld %}
+{#- Organization schema — tells Google the store name, slogan and logo. #}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "Veloura",
+    "url": "{{ request.url_root.rstrip('/') }}",
+    "logo": "{{ url_for('static', filename='img/favicon-32x32.png', _external=True) }}",
+    "slogan": "Wear the Elegance.",
+    "description": "Premium ethnic and contemporary clothing for men, women and kids."
+}
+</script>
+{% endblock %}
+
 {% block content %}
 
 <!-- ============ HERO ============ -->

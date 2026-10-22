@@ -3,6 +3,7 @@
 
 {% block title %}Order {{ order.order_number }} confirmed — Veloura{% endblock %}
 {% block meta_description %}Thank you! Your Veloura order {{ order.order_number }} has been placed.{% endblock %}
+{% block robots %}noindex{% endblock %}
 
 {% block content %}
 <section class="thanks-section container">

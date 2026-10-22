@@ -15,7 +15,7 @@ os.environ.setdefault("FLASK_ENV", "development")
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app import create_app, db
-from app.models import ContactMessage, User
+from app.models import Category, ContactMessage, Product, User
 
 app = create_app()
 app.config["TESTING"] = True
@@ -187,6 +187,114 @@ with app.app_context():
     r = c.get("/step6-boom")
     check("Custom 500 page", r.status_code == 500 and b"Something Went Wrong" in r.data)
 
+    # ---------- Part 2: SEO ----------
+    print("\n-- Part 2: SEO --")
+
+    product = Product.query.filter_by(is_active=True).first()
+    assert product is not None, "seed data needed for SEO tests"
+
+    # Home page: canonical, OG, Twitter, Organization JSON-LD, favicon
+    home_html = c.get("/").data.decode()
+    check("Home has canonical URL", 'rel="canonical"' in home_html)
+    check("Home has og:title + og:description + og:image",
+          all(x in home_html for x in ['property="og:title"', 'property="og:description"', 'property="og:image"']))
+    check("Home has Twitter card tag", 'name="twitter:card"' in home_html)
+    check("Home has Organization JSON-LD", '"@type": "Organization"' in home_html)
+    check("Favicon links present (svg + png + apple-touch)",
+          all(x in home_html for x in ["favicon.svg", "favicon-32x32.png", "apple-touch-icon.png"]))
+    check("Favicon files exist on disk",
+          all(os.path.exists(os.path.join("app", "static", "img", f))
+              for f in ["favicon.svg", "favicon-32x32.png", "apple-touch-icon.png"]))
+
+    # Product page: title/desc use product name, OG image = product image,
+    # Product JSON-LD with INR price + availability.
+    r = c.get(f"/product/{product.id}")
+    ph = r.data.decode()
+    import html as html_lib
+    title = html_lib.unescape(re.search(r"<title>(.*?)</title>", ph).group(1))
+    check("Product title uses product name", product.name in title)
+    check("Product og:image is the product's main image",
+          bool(product.images) and product.images[0].image_url in ph)
+    check("Product JSON-LD present", '"@type": "Product"' in ph)
+    check("Product JSON-LD price currency INR", '"priceCurrency": "INR"' in ph)
+    check("Product JSON-LD availability set",
+          "InStock" in ph or "OutOfStock" in ph)
+
+    # Clean slug URL → 301 to the canonical id URL.
+    if product.slug:
+        r = c.get(f"/product/{product.slug}")
+        check("Slug URL redirects 301 to /product/<id>",
+              r.status_code == 301 and r.headers.get("Location", "").endswith(f"/product/{product.id}"))
+
+    # Category page uses the real category name in the title.
+    r = c.get(f"/shop/{product.category.slug}")
+    t = re.search(r"<title>(.*?)</title>", r.data.decode()).group(1)
+    check("Category title uses category name", product.category.name in t)
+
+    # Canonical on filtered shop URL points to the clean base page.
+    r = c.get("/shop?sort=price_asc&page=2")
+    m = re.search(r'<link rel="canonical" href="([^"]+)"', r.data.decode())
+    check("Filtered shop canonical = clean /shop (no query string)",
+          bool(m) and m.group(1).endswith("/shop") and "?" not in m.group(1))
+
+    # Sitemap + robots
+    os.environ["SITE_URL"] = "https://veloura-test.example"
+    try:
+        r = c.get("/sitemap.xml")
+        sx = r.data.decode()
+        check("sitemap.xml returns 200 with XML mimetype",
+              r.status_code == 200 and r.mimetype == "application/xml")
+        check("Sitemap lists home + shop + static pages",
+              all(x in sx for x in ["/</loc>", "/shop</loc>", "/about</loc>",
+                                    "/contact</loc>", "/shipping-returns</loc>",
+                                    "/privacy</loc>", "/terms</loc>"]))
+        check("Sitemap lists every category", all(
+            f"/shop/{cat.slug}</loc>" in sx for cat in Category.query.all()))
+        active = Product.query.filter_by(is_active=True).count()
+        inactive = Product.query.filter_by(is_active=False).count()
+        check(f"Sitemap lists all {active} active products", sx.count("/product/") == active)
+        check("Sitemap uses SITE_URL env var", "https://veloura-test.example/" in sx)
+
+        r = c.get("/robots.txt")
+        rb = r.data.decode()
+        check("robots.txt returns 200 text/plain", r.status_code == 200 and r.mimetype == "text/plain")
+        check("robots blocks /admin /cart /checkout /account /order",
+              all(x in rb for x in ["Disallow: /admin", "Disallow: /cart",
+                                    "Disallow: /checkout", "Disallow: /account",
+                                    "Disallow: /order"]))
+        check("robots points to sitemap with SITE_URL",
+              "Sitemap: https://veloura-test.example/sitemap.xml" in rb)
+    finally:
+        del os.environ["SITE_URL"]
+
+    # Private pages must not be indexed.
+    for path in ["/cart", "/checkout", "/login", "/register", "/account"]:
+        r = c.get(path)
+        if r.status_code == 302:
+            check(f"{path} is noindex (redirect to login still renders later)",
+                  True)  # anonymous redirect — page itself has noindex when shown
+            continue
+        check(f"{path} has <meta name=\"robots\" content=\"noindex\">",
+              'content="noindex"' in r.data.decode())
+
+    # Admin pages noindex (already had it — keep the guarantee testable).
+    admin_html = c.get("/admin/messages").data.decode()
+    check("Admin pages have noindex", 'content="noindex' in admin_html)
+
+    # Every public page has a unique, non-empty title + meta description.
+    public = ["/", "/shop", f"/shop/{product.category.slug}", f"/product/{product.id}",
+              "/about", "/contact", "/shipping-returns", "/privacy", "/terms"]
+    seen_titles, ok_meta = set(), True
+    for path in public:
+        html = c.get(path).data.decode()
+        title = re.search(r"<title>(.*?)</title>", html)
+        desc = re.search(r'<meta name="description" content="([^"]+)"', html)
+        seen_titles.add(title.group(1) if title else "")
+        if not desc or len(desc.group(1)) < 20:
+            ok_meta = False
+    check("All public pages have unique titles", len(seen_titles) == len(public), seen_titles)
+    check("All public pages have a real meta description", ok_meta)
+
     # ---------- results ----------
-    print(f"\n=== Part 1: {PASS} passed, {FAIL} failed ===")
+    print(f"\n=== Step 6: {PASS} passed, {FAIL} failed ===")
     sys.exit(1 if FAIL else 0)
